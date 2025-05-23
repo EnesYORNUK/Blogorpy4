@@ -293,9 +293,9 @@
     <script src="config.js"></script>
     <script src="scripts/supabase-config.js"></script>
     <script src="scripts/auth.js"></script>
-    <script src="scripts/create-post.js"></script>
+    <script src="scripts/create-post-debug.js"></script>
     <script src="scripts/main.js"></script>
     
-        <script>        // Ensure proper initialization order        document.addEventListener('DOMContentLoaded', function() {            // Wait for all scripts to load            setTimeout(() => {                if (typeof PostEditor !== 'undefined') {                    window.postEditor = new PostEditor();                } else {                    console.error('PostEditor class not found');                }            }, 100);        });    </script>
+    <script>        // Debug initialization        console.log('Page script loaded');        document.addEventListener('DOMContentLoaded', function() {            console.log('Page DOM loaded');        });    </script>
 </body>
 </html> 
