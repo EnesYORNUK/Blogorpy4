@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil - Blogorpy</title>
+    <meta name="description" content="Kullanıcı profili ve ayarları">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/profile.css">
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="index.html">
+                    <h1>Blogorpy</h1>
+                </a>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="index.html#posts" class="nav-link">Posts</a>
+                <a href="about.html" class="nav-link">About</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+            </div>
+            <div class="nav-auth" id="nav-auth">
+                <button class="btn btn-outline" id="login-btn">Login</button>
+                <button class="btn btn-primary" id="register-btn">Register</button>
+            </div>
+            <div class="nav-user hidden" id="nav-user">
+                <button class="btn btn-primary" id="create-post-btn">
+                    <i class="fas fa-plus"></i> New Post
+                </button>
+                <div class="user-dropdown">
+                    <button class="user-avatar" id="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <div class="dropdown-menu" id="dropdown-menu">
+                        <a href="profile.html" id="profile-link">Profile</a>
+                        <a href="#" id="saved-posts-link">Saved Posts</a>
+                        <a href="#" id="logout-btn">Logout</a>
+                    </div>
+                </div>
+            </div>
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Profile Container -->
+    <main class="profile-container">
+        <div class="container">
+            <!-- Profile Header -->
+            <section class="profile-header">
+                <div class="profile-banner">
+                    <div class="banner-overlay"></div>
+                    <button class="edit-banner-btn" id="edit-banner-btn" title="Banner'ı Değiştir">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                </div>
+                
+                <div class="profile-info">
+                    <div class="profile-avatar-container">
+                        <div class="profile-avatar" id="profile-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <button class="edit-avatar-btn" id="edit-avatar-btn" title="Profil Fotoğrafını Değiştir">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                        <input type="file" id="avatar-input" accept="image/*" class="hidden">
+                        <input type="file" id="banner-input" accept="image/*" class="hidden">
+                    </div>
+                    
+                    <div class="profile-details">
+                        <div class="profile-name-section">
+                            <h1 class="profile-name" id="profile-name">Loading...</h1>
+                            <button class="edit-profile-btn" id="edit-profile-btn">
+                                <i class="fas fa-edit"></i> Profili Düzenle
+                            </button>
+                        </div>
+                        <p class="profile-email" id="profile-email">Loading...</p>
+                        <p class="profile-bio" id="profile-bio">Bio henüz eklenmemiş...</p>
+                        <div class="profile-stats">
+                            <div class="stat">
+                                <span class="stat-number" id="posts-count">0</span>
+                                <span class="stat-label">Yazı</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-number" id="likes-count">0</span>
+                                <span class="stat-label">Beğeni</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-number" id="views-count">0</span>
+                                <span class="stat-label">Görüntülenme</span>
+                            </div>
+                        </div>
+                        <p class="profile-join-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span id="join-date">Loading...</span> tarihinde katıldı
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Profile Tabs -->
+            <section class="profile-tabs">
+                <div class="tab-navigation">
+                    <button class="tab-btn active" data-tab="posts">
+                        <i class="fas fa-newspaper"></i> Yazılarım
+                    </button>
+                    <button class="tab-btn" data-tab="saved">
+                        <i class="fas fa-bookmark"></i> Kayıtlı Yazılar
+                    </button>
+                    <button class="tab-btn" data-tab="liked">
+                        <i class="fas fa-heart"></i> Beğendiklerim
+                    </button>
+                    <button class="tab-btn" data-tab="settings">
+                        <i class="fas fa-cog"></i> Ayarlar
+                    </button>
+                </div>
+
+                <!-- Posts Tab -->
+                <div class="tab-content active" id="posts-tab">
+                    <div class="posts-header">
+                        <h2>Yazılarım</h2>
+                        <div class="posts-filter">
+                            <select id="posts-filter-select">
+                                <option value="all">Tüm Yazılar</option>
+                                <option value="published">Yayınlanan</option>
+                                <option value="draft">Taslak</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="posts-grid" id="user-posts">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Yazılar yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saved Posts Tab -->
+                <div class="tab-content" id="saved-tab">
+                    <h2>Kayıtlı Yazılar</h2>
+                    <div class="posts-grid" id="saved-posts">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Kayıtlı yazılar yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Liked Posts Tab -->
+                <div class="tab-content" id="liked-tab">
+                    <h2>Beğendiklerim</h2>
+                    <div class="posts-grid" id="liked-posts">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Beğenilen yazılar yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div class="tab-content" id="settings-tab">
+                    <div class="settings-container">
+                        <h2>Hesap Ayarları</h2>
+                        
+                        <!-- Profile Settings -->
+                        <div class="settings-section">
+                            <h3><i class="fas fa-user"></i> Profil Bilgileri</h3>
+                            <form id="profile-settings-form" class="settings-form">
+                                <div class="form-group">
+                                    <label for="settings-display-name">Ad Soyad</label>
+                                    <input type="text" id="settings-display-name" name="display_name" maxlength="50">
+                                </div>
+                                <div class="form-group">
+                                    <label for="settings-username">Kullanıcı Adı</label>
+                                    <input type="text" id="settings-username" name="username" maxlength="30">
+                                </div>
+                                <div class="form-group">
+                                    <label for="settings-bio">Biyografi</label>
+                                    <textarea id="settings-bio" name="bio" rows="3" maxlength="160" placeholder="Kendinizi tanıtın..."></textarea>
+                                    <small class="char-count">
+                                        <span id="bio-char-count">0</span>/160 karakter
+                                    </small>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Değişiklikleri Kaydet
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Privacy Settings -->
+                        <div class="settings-section">
+                            <h3><i class="fas fa-shield-alt"></i> Gizlilik Ayarları</h3>
+                            <div class="settings-form">
+                                <div class="form-group">
+                                    <label class="toggle-label">
+                                        <input type="checkbox" id="profile-public">
+                                        <span class="toggle-slider"></span>
+                                        Profilimi herkese açık yap
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label class="toggle-label">
+                                        <input type="checkbox" id="email-notifications">
+                                        <span class="toggle-slider"></span>
+                                        E-posta bildirimleri gönder
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Danger Zone -->
+                        <div class="settings-section danger-zone">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Tehlikeli İşlemler</h3>
+                            <div class="danger-actions">
+                                <button class="btn btn-danger" id="change-password-btn">
+                                    <i class="fas fa-key"></i> Şifre Değiştir
+                                </button>
+                                <button class="btn btn-danger" id="delete-account-btn">
+                                    <i class="fas fa-trash"></i> Hesabı Sil
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal" id="edit-profile-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Profili Düzenle</h3>
+                <button class="modal-close" id="close-edit-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-profile-form">
+                    <div class="form-group">
+                        <label for="edit-display-name">Ad Soyad *</label>
+                        <input type="text" id="edit-display-name" name="display_name" required maxlength="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-username">Kullanıcı Adı</label>
+                        <input type="text" id="edit-username" name="username" maxlength="30">
+                        <small>Sadece harf, rakam ve alt çizgi kullanabilirsiniz</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-bio">Biyografi</label>
+                        <textarea id="edit-bio" name="bio" rows="4" maxlength="160" placeholder="Kendinizi tanıtın..."></textarea>
+                        <small class="char-count">
+                            <span id="edit-bio-char-count">0</span>/160 karakter
+                        </small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="cancel-edit">İptal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal" id="change-password-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Şifre Değiştir</h3>
+                <button class="modal-close" id="close-password-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="change-password-form">
+                    <div class="form-group">
+                        <label for="current-password">Mevcut Şifre *</label>
+                        <input type="password" id="current-password" name="current_password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password">Yeni Şifre *</label>
+                        <input type="password" id="new-password" name="new_password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-new-password">Yeni Şifre Tekrar *</label>
+                        <input type="password" id="confirm-new-password" name="confirm_password" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="cancel-password">İptal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-key"></i> Şifreyi Değiştir
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>İşlem yapılıyor...</p>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="scripts/supabase-config.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/profile.js"></script>
+    <script src="scripts/main.js"></script>
+    
+    <script>
+        // Initialize profile page
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof ProfileManager !== 'undefined') {
+                window.profileManager = new ProfileManager();
+            }
+        });
+    </script>
+</body>
+</html> 
