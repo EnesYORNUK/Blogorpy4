@@ -45,6 +45,9 @@ class MainController {
         // Navigation events
         this.setupNavigationListeners();
         
+        // Create post button
+        this.setupCreatePostButton();
+        
         // Smooth scroll for anchor links
         this.setupSmoothScroll();
         
@@ -105,6 +108,33 @@ class MainController {
                 }
             }
         });
+    }
+    
+    /**
+     * Setup create post button functionality
+     */
+    setupCreatePostButton() {
+        const createPostBtn = document.getElementById('create-post-btn');
+        
+        if (createPostBtn) {
+            createPostBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Check if user is authenticated
+                if (window.authManager && window.authManager.currentUser) {
+                    // User is logged in, redirect to create post page
+                    window.location.href = 'create-post.html';
+                } else {
+                    // User not logged in, show login modal
+                    if (window.authManager && typeof window.authManager.showLoginModal === 'function') {
+                        window.authManager.showLoginModal();
+                    } else {
+                        // Fallback: redirect to login
+                        alert('Please login to create a post');
+                    }
+                }
+            });
+        }
     }
     
     /**
