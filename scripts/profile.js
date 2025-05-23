@@ -73,7 +73,7 @@ class ProfileManager {
 
         } catch (error) {
             console.error('Error loading user profile:', error);
-            this.showToast('Hata', 'Profil bilgileri yüklenemedi', 'error');
+            this.showToast('Error', 'Failed to load profile information', 'error');
         }
     }
 
@@ -220,12 +220,12 @@ class ProfileManager {
         }
 
         if (profileBio) {
-            profileBio.textContent = this.userProfile.bio || 'Bio henüz eklenmemiş...';
+            profileBio.textContent = this.userProfile.bio || 'No bio added yet...';
         }
 
         if (joinDate) {
             const date = new Date(this.userProfile.created_at || this.currentUser.created_at);
-            joinDate.textContent = date.toLocaleDateString('tr-TR', {
+            joinDate.textContent = date.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
@@ -359,7 +359,7 @@ class ProfileManager {
 
         } catch (error) {
             console.error('Error loading user posts:', error);
-            this.showError(container, 'Yazılar yüklenemedi');
+            this.showError(container, 'Failed to load posts');
         }
     }
 
@@ -395,7 +395,7 @@ class ProfileManager {
 
         } catch (error) {
             console.error('Error loading saved posts:', error);
-            this.showError(container, 'Kayıtlı yazılar yüklenemedi');
+            this.showError(container, 'Failed to load saved posts');
         }
     }
 
@@ -431,7 +431,7 @@ class ProfileManager {
 
         } catch (error) {
             console.error('Error loading liked posts:', error);
-            this.showError(container, 'Beğenilen yazılar yüklenemedi');
+            this.showError(container, 'Failed to load liked posts');
         }
     }
 
@@ -471,8 +471,8 @@ class ProfileManager {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-newspaper"></i>
-                    <h3>Henüz yazı yok</h3>
-                    <p>Bu kategoride herhangi bir yazı bulunamadı.</p>
+                    <h3>No posts yet</h3>
+                    <p>No posts found in this category.</p>
                 </div>
             `;
             return;
@@ -494,7 +494,7 @@ class ProfileManager {
      */
     createPostCard(post) {
         const authorName = post.profiles?.display_name || 'Anonymous';
-        const createdAt = new Date(post.created_at).toLocaleDateString('tr-TR');
+        const createdAt = new Date(post.created_at).toLocaleDateString('en-US');
         const excerpt = post.excerpt || this.generateExcerpt(post.content);
 
         return `
@@ -595,7 +595,7 @@ class ProfileManager {
         const bio = formData.get('bio').trim();
 
         if (!displayName) {
-            this.showToast('Hata', 'Ad soyad gereklidir', 'error');
+            this.showToast('Error', 'Full name is required', 'error');
             return;
         }
 
@@ -624,11 +624,11 @@ class ProfileManager {
 
             this.hideModals();
             this.renderProfile();
-            this.showToast('Başarılı', 'Profil başarıyla güncellendi', 'success');
+            this.showToast('Success', 'Profile updated successfully', 'success');
 
         } catch (error) {
             console.error('Error updating profile:', error);
-            this.showToast('Hata', 'Profil güncellenirken hata oluştu', 'error');
+            this.showToast('Error', 'Failed to update profile', 'error');
         } finally {
             this.hideLoadingOverlay();
         }
@@ -667,11 +667,11 @@ class ProfileManager {
             this.userProfile = { ...this.userProfile, ...updateData };
 
             this.renderProfile();
-            this.showToast('Başarılı', 'Ayarlar başarıyla kaydedildi', 'success');
+            this.showToast('Success', 'Settings saved successfully', 'success');
 
         } catch (error) {
             console.error('Error updating profile settings:', error);
-            this.showToast('Hata', 'Ayarlar kaydedilirken hata oluştu', 'error');
+            this.showToast('Error', 'Failed to save settings', 'error');
         } finally {
             this.hideLoadingOverlay();
         }
@@ -689,12 +689,12 @@ class ProfileManager {
         const confirmPassword = formData.get('confirm_password');
 
         if (newPassword !== confirmPassword) {
-            this.showToast('Hata', 'Yeni şifreler eşleşmiyor', 'error');
+            this.showToast('Error', 'New passwords do not match', 'error');
             return;
         }
 
         if (newPassword.length < 6) {
-            this.showToast('Hata', 'Şifre en az 6 karakter olmalıdır', 'error');
+            this.showToast('Error', 'Password must be at least 6 characters long', 'error');
             return;
         }
 
@@ -708,11 +708,11 @@ class ProfileManager {
             if (error) throw error;
 
             this.hideModals();
-            this.showToast('Başarılı', 'Şifre başarıyla değiştirildi', 'success');
+            this.showToast('Success', 'Password changed successfully', 'success');
 
         } catch (error) {
             console.error('Error changing password:', error);
-            this.showToast('Hata', 'Şifre değiştirilirken hata oluştu', 'error');
+            this.showToast('Error', 'Failed to change password', 'error');
         } finally {
             this.hideLoadingOverlay();
         }
@@ -726,12 +726,12 @@ class ProfileManager {
         if (!file) return;
 
         if (!file.type.startsWith('image/')) {
-            this.showToast('Hata', 'Lütfen geçerli bir resim dosyası seçin', 'error');
+            this.showToast('Error', 'Please select a valid image file', 'error');
             return;
         }
 
         if (file.size > 2 * 1024 * 1024) { // 2MB
-            this.showToast('Hata', 'Dosya boyutu 2MB\'dan küçük olmalıdır', 'error');
+            this.showToast('Error', 'File size must be less than 2MB', 'error');
             return;
         }
 
@@ -768,11 +768,11 @@ class ProfileManager {
 
             this.userProfile.avatar_url = avatarUrl;
             this.renderProfile();
-            this.showToast('Başarılı', 'Profil fotoğrafı güncellendi', 'success');
+            this.showToast('Success', 'Profile picture updated', 'success');
 
         } catch (error) {
             console.error('Error uploading avatar:', error);
-            this.showToast('Hata', 'Profil fotoğrafı yüklenirken hata oluştu', 'error');
+            this.showToast('Error', 'Failed to upload profile picture', 'error');
         } finally {
             this.hideLoadingOverlay();
         }
@@ -786,12 +786,12 @@ class ProfileManager {
         if (!file) return;
 
         if (!file.type.startsWith('image/')) {
-            this.showToast('Hata', 'Lütfen geçerli bir resim dosyası seçin', 'error');
+            this.showToast('Error', 'Please select a valid image file', 'error');
             return;
         }
 
         if (file.size > 5 * 1024 * 1024) { // 5MB
-            this.showToast('Hata', 'Dosya boyutu 5MB\'dan küçük olmalıdır', 'error');
+            this.showToast('Error', 'File size must be less than 5MB', 'error');
             return;
         }
 
@@ -823,11 +823,11 @@ class ProfileManager {
                 profileBanner.style.backgroundPosition = 'center';
             }
 
-            this.showToast('Başarılı', 'Banner fotoğrafı güncellendi', 'success');
+            this.showToast('Success', 'Banner picture updated', 'success');
 
         } catch (error) {
             console.error('Error uploading banner:', error);
-            this.showToast('Hata', 'Banner fotoğrafı yüklenirken hata oluştu', 'error');
+            this.showToast('Error', 'Failed to upload banner picture', 'error');
         } finally {
             this.hideLoadingOverlay();
         }
@@ -838,13 +838,13 @@ class ProfileManager {
      */
     async handleDeleteAccount() {
         const confirmed = confirm(
-            'Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm verileriniz silinecektir.'
+            'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.'
         );
 
         if (!confirmed) return;
 
         const doubleConfirmed = confirm(
-            'Son kez soruyorum: Hesabınızı kalıcı olarak silmek istediğinizden emin misiniz?'
+            'Last warning: Are you absolutely sure you want to permanently delete your account?'
         );
 
         if (!doubleConfirmed) return;
@@ -855,12 +855,12 @@ class ProfileManager {
             // Note: This would require admin privileges
             // For now, just sign out the user
             await SupabaseConfig.client.auth.signOut();
-            this.showToast('Bilgi', 'Hesap silme işlemi için yönetici ile iletişime geçin', 'info');
+            this.showToast('Info', 'Please contact an administrator to delete your account', 'info');
             window.location.href = 'index.html';
 
         } catch (error) {
             console.error('Error deleting account:', error);
-            this.showToast('Hata', 'Hesap silinirken hata oluştu', 'error');
+            this.showToast('Error', 'Failed to delete account', 'error');
         } finally {
             this.hideLoadingOverlay();
         }
@@ -873,7 +873,7 @@ class ProfileManager {
         container.innerHTML = `
             <div class="loading-spinner">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Yükleniyor...</p>
+                <p>Loading...</p>
             </div>
         `;
     }
@@ -885,7 +885,7 @@ class ProfileManager {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-exclamation-triangle"></i>
-                <h3>Hata</h3>
+                <h3>Error</h3>
                 <p>${message}</p>
             </div>
         `;

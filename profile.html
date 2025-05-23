@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profil - Blogorpy</title>
-    <meta name="description" content="Kullanıcı profili ve ayarları">
+    <title>Profile - Blogorpy</title>
+    <meta name="description" content="User profile and settings">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
@@ -69,7 +69,7 @@
             <section class="profile-header">
                 <div class="profile-banner">
                     <div class="banner-overlay"></div>
-                    <button class="edit-banner-btn" id="edit-banner-btn" title="Banner'ı Değiştir">
+                    <button class="edit-banner-btn" id="edit-banner-btn" title="Change Banner">
                         <i class="fas fa-camera"></i>
                     </button>
                 </div>
@@ -79,7 +79,7 @@
                         <div class="profile-avatar" id="profile-avatar">
                             <i class="fas fa-user"></i>
                         </div>
-                        <button class="edit-avatar-btn" id="edit-avatar-btn" title="Profil Fotoğrafını Değiştir">
+                        <button class="edit-avatar-btn" id="edit-avatar-btn" title="Change Profile Picture">
                             <i class="fas fa-camera"></i>
                         </button>
                         <input type="file" id="avatar-input" accept="image/*" class="hidden">
@@ -90,28 +90,28 @@
                         <div class="profile-name-section">
                             <h1 class="profile-name" id="profile-name">Loading...</h1>
                             <button class="edit-profile-btn" id="edit-profile-btn">
-                                <i class="fas fa-edit"></i> Profili Düzenle
+                                <i class="fas fa-edit"></i> Edit Profile
                             </button>
                         </div>
                         <p class="profile-email" id="profile-email">Loading...</p>
-                        <p class="profile-bio" id="profile-bio">Bio henüz eklenmemiş...</p>
+                        <p class="profile-bio" id="profile-bio">No bio added yet...</p>
                         <div class="profile-stats">
                             <div class="stat">
                                 <span class="stat-number" id="posts-count">0</span>
-                                <span class="stat-label">Yazı</span>
+                                <span class="stat-label">Posts</span>
                             </div>
                             <div class="stat">
                                 <span class="stat-number" id="likes-count">0</span>
-                                <span class="stat-label">Beğeni</span>
+                                <span class="stat-label">Likes</span>
                             </div>
                             <div class="stat">
                                 <span class="stat-number" id="views-count">0</span>
-                                <span class="stat-label">Görüntülenme</span>
+                                <span class="stat-label">Views</span>
                             </div>
                         </div>
                         <p class="profile-join-date">
                             <i class="fas fa-calendar-alt"></i>
-                            <span id="join-date">Loading...</span> tarihinde katıldı
+                            Joined on <span id="join-date">Loading...</span>
                         </p>
                     </div>
                 </div>
@@ -121,57 +121,57 @@
             <section class="profile-tabs">
                 <div class="tab-navigation">
                     <button class="tab-btn active" data-tab="posts">
-                        <i class="fas fa-newspaper"></i> Yazılarım
+                        <i class="fas fa-newspaper"></i> My Posts
                     </button>
                     <button class="tab-btn" data-tab="saved">
-                        <i class="fas fa-bookmark"></i> Kayıtlı Yazılar
+                        <i class="fas fa-bookmark"></i> Saved Posts
                     </button>
                     <button class="tab-btn" data-tab="liked">
-                        <i class="fas fa-heart"></i> Beğendiklerim
+                        <i class="fas fa-heart"></i> Liked Posts
                     </button>
                     <button class="tab-btn" data-tab="settings">
-                        <i class="fas fa-cog"></i> Ayarlar
+                        <i class="fas fa-cog"></i> Settings
                     </button>
                 </div>
 
                 <!-- Posts Tab -->
                 <div class="tab-content active" id="posts-tab">
                     <div class="posts-header">
-                        <h2>Yazılarım</h2>
+                        <h2>My Posts</h2>
                         <div class="posts-filter">
                             <select id="posts-filter-select">
-                                <option value="all">Tüm Yazılar</option>
-                                <option value="published">Yayınlanan</option>
-                                <option value="draft">Taslak</option>
+                                <option value="all">All Posts</option>
+                                <option value="published">Published</option>
+                                <option value="draft">Draft</option>
                             </select>
                         </div>
                     </div>
                     <div class="posts-grid" id="user-posts">
                         <div class="loading-spinner">
                             <i class="fas fa-spinner fa-spin"></i>
-                            <p>Yazılar yükleniyor...</p>
+                            <p>Loading posts...</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Saved Posts Tab -->
                 <div class="tab-content" id="saved-tab">
-                    <h2>Kayıtlı Yazılar</h2>
+                    <h2>Saved Posts</h2>
                     <div class="posts-grid" id="saved-posts">
                         <div class="loading-spinner">
                             <i class="fas fa-spinner fa-spin"></i>
-                            <p>Kayıtlı yazılar yükleniyor...</p>
+                            <p>Loading saved posts...</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Liked Posts Tab -->
                 <div class="tab-content" id="liked-tab">
-                    <h2>Beğendiklerim</h2>
+                    <h2>Liked Posts</h2>
                     <div class="posts-grid" id="liked-posts">
                         <div class="loading-spinner">
                             <i class="fas fa-spinner fa-spin"></i>
-                            <p>Beğenilen yazılar yükleniyor...</p>
+                            <p>Loading liked posts...</p>
                         </div>
                     </div>
                 </div>
@@ -179,49 +179,49 @@
                 <!-- Settings Tab -->
                 <div class="tab-content" id="settings-tab">
                     <div class="settings-container">
-                        <h2>Hesap Ayarları</h2>
+                        <h2>Account Settings</h2>
                         
                         <!-- Profile Settings -->
                         <div class="settings-section">
-                            <h3><i class="fas fa-user"></i> Profil Bilgileri</h3>
+                            <h3><i class="fas fa-user"></i> Profile Information</h3>
                             <form id="profile-settings-form" class="settings-form">
                                 <div class="form-group">
-                                    <label for="settings-display-name">Ad Soyad</label>
+                                    <label for="settings-display-name">Full Name</label>
                                     <input type="text" id="settings-display-name" name="display_name" maxlength="50">
                                 </div>
                                 <div class="form-group">
-                                    <label for="settings-username">Kullanıcı Adı</label>
+                                    <label for="settings-username">Username</label>
                                     <input type="text" id="settings-username" name="username" maxlength="30">
                                 </div>
                                 <div class="form-group">
-                                    <label for="settings-bio">Biyografi</label>
-                                    <textarea id="settings-bio" name="bio" rows="3" maxlength="160" placeholder="Kendinizi tanıtın..."></textarea>
+                                    <label for="settings-bio">Biography</label>
+                                    <textarea id="settings-bio" name="bio" rows="3" maxlength="160" placeholder="Tell us about yourself..."></textarea>
                                     <small class="char-count">
-                                        <span id="bio-char-count">0</span>/160 karakter
+                                        <span id="bio-char-count">0</span>/160 characters
                                     </small>
                                 </div>
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> Değişiklikleri Kaydet
+                                    <i class="fas fa-save"></i> Save Changes
                                 </button>
                             </form>
                         </div>
 
                         <!-- Privacy Settings -->
                         <div class="settings-section">
-                            <h3><i class="fas fa-shield-alt"></i> Gizlilik Ayarları</h3>
+                            <h3><i class="fas fa-shield-alt"></i> Privacy Settings</h3>
                             <div class="settings-form">
                                 <div class="form-group">
                                     <label class="toggle-label">
                                         <input type="checkbox" id="profile-public">
                                         <span class="toggle-slider"></span>
-                                        Profilimi herkese açık yap
+                                        Make my profile public
                                     </label>
                                 </div>
                                 <div class="form-group">
                                     <label class="toggle-label">
                                         <input type="checkbox" id="email-notifications">
                                         <span class="toggle-slider"></span>
-                                        E-posta bildirimleri gönder
+                                        Send email notifications
                                     </label>
                                 </div>
                             </div>
@@ -229,13 +229,13 @@
 
                         <!-- Danger Zone -->
                         <div class="settings-section danger-zone">
-                            <h3><i class="fas fa-exclamation-triangle"></i> Tehlikeli İşlemler</h3>
+                            <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
                             <div class="danger-actions">
                                 <button class="btn btn-danger" id="change-password-btn">
-                                    <i class="fas fa-key"></i> Şifre Değiştir
+                                    <i class="fas fa-key"></i> Change Password
                                 </button>
                                 <button class="btn btn-danger" id="delete-account-btn">
-                                    <i class="fas fa-trash"></i> Hesabı Sil
+                                    <i class="fas fa-trash"></i> Delete Account
                                 </button>
                             </div>
                         </div>
@@ -250,7 +250,7 @@
         <div class="modal-overlay"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Profili Düzenle</h3>
+                <h3>Edit Profile</h3>
                 <button class="modal-close" id="close-edit-modal">
                     <i class="fas fa-times"></i>
                 </button>
@@ -258,25 +258,25 @@
             <div class="modal-body">
                 <form id="edit-profile-form">
                     <div class="form-group">
-                        <label for="edit-display-name">Ad Soyad *</label>
+                        <label for="edit-display-name">Full Name *</label>
                         <input type="text" id="edit-display-name" name="display_name" required maxlength="50">
                     </div>
                     <div class="form-group">
-                        <label for="edit-username">Kullanıcı Adı</label>
+                        <label for="edit-username">Username</label>
                         <input type="text" id="edit-username" name="username" maxlength="30">
-                        <small>Sadece harf, rakam ve alt çizgi kullanabilirsiniz</small>
+                        <small>Only letters, numbers and underscores allowed</small>
                     </div>
                     <div class="form-group">
-                        <label for="edit-bio">Biyografi</label>
-                        <textarea id="edit-bio" name="bio" rows="4" maxlength="160" placeholder="Kendinizi tanıtın..."></textarea>
+                        <label for="edit-bio">Biography</label>
+                        <textarea id="edit-bio" name="bio" rows="4" maxlength="160" placeholder="Tell us about yourself..."></textarea>
                         <small class="char-count">
-                            <span id="edit-bio-char-count">0</span>/160 karakter
+                            <span id="edit-bio-char-count">0</span>/160 characters
                         </small>
                     </div>
                     <div class="form-actions">
-                        <button type="button" class="btn btn-outline" id="cancel-edit">İptal</button>
+                        <button type="button" class="btn btn-outline" id="cancel-edit">Cancel</button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Kaydet
+                            <i class="fas fa-save"></i> Save
                         </button>
                     </div>
                 </form>
@@ -289,7 +289,7 @@
         <div class="modal-overlay"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Şifre Değiştir</h3>
+                <h3>Change Password</h3>
                 <button class="modal-close" id="close-password-modal">
                     <i class="fas fa-times"></i>
                 </button>
@@ -297,21 +297,21 @@
             <div class="modal-body">
                 <form id="change-password-form">
                     <div class="form-group">
-                        <label for="current-password">Mevcut Şifre *</label>
+                        <label for="current-password">Current Password *</label>
                         <input type="password" id="current-password" name="current_password" required>
                     </div>
                     <div class="form-group">
-                        <label for="new-password">Yeni Şifre *</label>
+                        <label for="new-password">New Password *</label>
                         <input type="password" id="new-password" name="new_password" required minlength="6">
                     </div>
                     <div class="form-group">
-                        <label for="confirm-new-password">Yeni Şifre Tekrar *</label>
+                        <label for="confirm-new-password">Confirm New Password *</label>
                         <input type="password" id="confirm-new-password" name="confirm_password" required>
                     </div>
                     <div class="form-actions">
-                        <button type="button" class="btn btn-outline" id="cancel-password">İptal</button>
+                        <button type="button" class="btn btn-outline" id="cancel-password">Cancel</button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-key"></i> Şifreyi Değiştir
+                            <i class="fas fa-key"></i> Change Password
                         </button>
                     </div>
                 </form>
@@ -323,7 +323,7 @@
     <div class="loading-overlay hidden" id="loading-overlay">
         <div class="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i>
-            <p>İşlem yapılıyor...</p>
+            <p>Processing...</p>
         </div>
     </div>
 
