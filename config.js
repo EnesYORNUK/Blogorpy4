@@ -22,8 +22,8 @@ const BLOG_CONFIG = {
     // SUPABASE CONFIGURATION
     // =========================================
     supabase: {
-        url: 'https://your-project-url.supabase.co',
-        anonKey: 'your-anon-key-here',
+        url: 'https://ysosmpgnoopvafdvtyoq.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzb3NtcGdub29wdmFmZHZ0eW9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMTQ5MTMsImV4cCI6MjA2MzU5MDkxM30.N0DgSDjEmIbV0nf0S2lgC7fZ_Yana7YFmhFbfDrvTr0',
         
         // Storage bucket names
         buckets: {
