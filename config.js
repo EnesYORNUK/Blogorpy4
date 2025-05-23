@@ -13,7 +13,7 @@ const BLOG_CONFIG = {
         name: 'Blogorpy',
         tagline: 'Modern Blogging Platform',
         description: 'Discover amazing stories, share your thoughts, and connect with writers worldwide',
-        url: 'https://your-domain.com',
+        url: 'https://blogorpy4.netlify.app/',
         logo: '/assets/logo.png', // Optional: path to your logo
         favicon: '/assets/favicon.ico' // Optional: path to your favicon
     },
