@@ -293,9 +293,9 @@
     <script src="config.js"></script>
     <script src="scripts/supabase-config.js"></script>
     <script src="scripts/auth.js"></script>
-    <script src="scripts/create-post-debug.js"></script>
+    <script src="scripts/create-post.js"></script>
     <script src="scripts/main.js"></script>
     
-    <script>        // Debug initialization        console.log('Page script loaded');        document.addEventListener('DOMContentLoaded', function() {            console.log('Page DOM loaded');        });    </script>
+    <script>        // Initialize post editor        document.addEventListener('DOMContentLoaded', function() {            if (typeof PostEditor !== 'undefined') {                window.postEditor = new PostEditor();            }        });    </script>
 </body>
 </html> 
