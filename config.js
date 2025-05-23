@@ -22,13 +22,14 @@ const BLOG_CONFIG = {
     // SUPABASE CONFIGURATION
     // =========================================
     supabase: {
-        url: 'https://ysosmpgnoopvafdvtyoq.supabase.co',
-        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzb3NtcGdub29wdmFmZHZ0eW9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMTQ5MTMsImV4cCI6MjA2MzU5MDkxM30.N0DgSDjEmIbV0nf0S2lgC7fZ_Yana7YFmhFbfDrvTr0',
+        url: 'https://bczjcjnanweoslrsbbfp.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjempjam5hbndlb3NscnNiYmZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMjI4MzAsImV4cCI6MjA2MzU5ODgzMH0.8gg3ck6xqpllatRy54_0Psyv2pv4oqf_-ZSm0Nsij40',
         
         // Storage bucket names
         buckets: {
             images: 'images',
             avatars: 'avatars',
+            banners: 'banners',
             documents: 'documents'
         }
     },
