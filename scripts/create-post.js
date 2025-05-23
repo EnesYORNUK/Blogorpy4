@@ -31,6 +31,7 @@ class PostEditor {
         this.setupCharacterCounters();
         this.setupImageUpload();
         this.setupTagsInput();
+        this.loadFromLocalStorage();
     }
 
     /**
@@ -38,7 +39,7 @@ class PostEditor {
      */
     async getCurrentUser() {
         try {
-            const { data: { user }, error } = await SupabaseConfig.client.auth.getUser();
+            const { data: { user }, error } = await supabaseClient.auth.getUser();
             if (error) throw error;
             return user;
         } catch (error) {
@@ -107,16 +108,18 @@ class PostEditor {
         if (titleInput) {
             titleInput.addEventListener('input', () => {
                 this.generateSlug();
+                this.autoSave();
             });
         }
 
-        // Toggle switches
-        const publishedToggle = document.getElementById('published');
-        if (publishedToggle) {
-            publishedToggle.addEventListener('change', (e) => {
-                this.isDraft = !e.target.checked;
-            });
-        }
+        // Other inputs for auto-save
+        const inputs = ['post-excerpt', 'meta-description', 'post-slug'];
+        inputs.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('input', () => this.autoSave());
+            }
+        });
     }
 
     /**
@@ -124,18 +127,26 @@ class PostEditor {
      */
     setupCharacterCounters() {
         const inputs = [
-            { input: '#post-title', counter: '#title-char-count' },
-            { input: '#post-excerpt', counter: '#excerpt-char-count' },
-            { input: '#meta-description', counter: '#meta-char-count' }
+            { input: '#post-title', counter: '#title-char-count', max: 100 },
+            { input: '#post-excerpt', counter: '#excerpt-char-count', max: 300 },
+            { input: '#meta-description', counter: '#meta-char-count', max: 160 }
         ];
 
-        inputs.forEach(({ input, counter }) => {
+        inputs.forEach(({ input, counter, max }) => {
             const inputElement = document.querySelector(input);
             const counterElement = document.querySelector(counter);
             
             if (inputElement && counterElement) {
                 inputElement.addEventListener('input', () => {
-                    counterElement.textContent = inputElement.value.length;
+                    const length = inputElement.value.length;
+                    counterElement.textContent = `${length}/${max}`;
+                    
+                    // Add warning if approaching limit
+                    if (length > max * 0.9) {
+                        counterElement.style.color = '#e74c3c';
+                    } else {
+                        counterElement.style.color = '#666';
+                    }
                 });
             }
         });
@@ -148,14 +159,12 @@ class PostEditor {
         const uploadArea = document.getElementById('upload-area');
         const featuredImageInput = document.getElementById('featured-image');
         const imagePreview = document.getElementById('image-preview');
-        const previewImg = document.getElementById('preview-img');
-        const changeImageBtn = document.getElementById('change-image');
         const removeImageBtn = document.getElementById('remove-image');
 
         // Click to upload
         if (uploadArea) {
             uploadArea.addEventListener('click', () => {
-                featuredImageInput.click();
+                featuredImageInput?.click();
             });
         }
 
@@ -163,13 +172,6 @@ class PostEditor {
         if (featuredImageInput) {
             featuredImageInput.addEventListener('change', (e) => {
                 this.handleImageSelect(e.target.files[0]);
-            });
-        }
-
-        // Change image button
-        if (changeImageBtn) {
-            changeImageBtn.addEventListener('click', () => {
-                featuredImageInput.click();
             });
         }
 
@@ -203,30 +205,7 @@ class PostEditor {
         }
     }
 
-    /**
-     * Setup tags input functionality
-     */
-    setupTagsInput() {
-        const tagInput = document.getElementById('tag-input');
-        const tagsContainer = document.getElementById('tags-container');
-
-        if (tagInput) {
-            tagInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault();
-                    this.addTag(tagInput.value.trim());
-                    tagInput.value = '';
-                }
-            });
-
-            tagInput.addEventListener('blur', () => {
-                if (tagInput.value.trim()) {
-                    this.addTag(tagInput.value.trim());
-                    tagInput.value = '';
-                }
-            });
-        }
-    }
+    /**     * Setup tags input     */    setupTagsInput() {        const tagsInput = document.getElementById('tag-input');        const tagsContainer = document.getElementById('tags-container');                if (tagsInput) {            tagsInput.addEventListener('keydown', (e) => {                if (e.key === 'Enter' || e.key === ',') {                    e.preventDefault();                    const tagText = tagsInput.value.trim();                    if (tagText) {                        this.addTag(tagText);                        tagsInput.value = '';                    }                }            });        }    }
 
     /**
      * Handle image selection
@@ -234,12 +213,16 @@ class PostEditor {
     handleImageSelect(file) {
         if (!file) return;
 
-        if (!file.type.startsWith('image/')) {
-            this.showToast('Error', 'Please select a valid image file', 'error');
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            this.showToast('Error', 'Please select a valid image file (JPEG, PNG, WebP)', 'error');
             return;
         }
 
-        if (file.size > 5 * 1024 * 1024) { // 5MB
+        // Validate file size (5MB max)
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
             this.showToast('Error', 'Image size must be less than 5MB', 'error');
             return;
         }
@@ -253,9 +236,11 @@ class PostEditor {
             const imagePreview = document.getElementById('image-preview');
             const previewImg = document.getElementById('preview-img');
 
-            previewImg.src = e.target.result;
-            uploadArea.classList.add('hidden');
-            imagePreview.classList.remove('hidden');
+            if (uploadArea && imagePreview && previewImg) {
+                previewImg.src = e.target.result;
+                uploadArea.style.display = 'none';
+                imagePreview.style.display = 'block';
+            }
         };
         reader.readAsDataURL(file);
     }
@@ -269,38 +254,39 @@ class PostEditor {
 
         const uploadArea = document.getElementById('upload-area');
         const imagePreview = document.getElementById('image-preview');
-        const previewImg = document.getElementById('preview-img');
+        const featuredImageInput = document.getElementById('featured-image');
 
-        previewImg.src = '';
-        uploadArea.classList.remove('hidden');
-        imagePreview.classList.add('hidden');
+        if (uploadArea && imagePreview) {
+            uploadArea.style.display = 'block';
+            imagePreview.style.display = 'none';
+        }
+
+        if (featuredImageInput) {
+            featuredImageInput.value = '';
+        }
     }
 
     /**
      * Add tag
      */
     addTag(tagText) {
-        if (!tagText || this.tags.includes(tagText.toLowerCase())) return;
+        const normalizedTag = tagText.toLowerCase().trim();
+        
+        // Check if tag already exists
+        if (this.tags.includes(normalizedTag)) {
+            this.showToast('Warning', 'Tag already exists', 'warning');
+            return;
+        }
 
-        const tag = tagText.toLowerCase();
-        this.tags.push(tag);
+        // Limit number of tags
+        if (this.tags.length >= 5) {
+            this.showToast('Warning', 'Maximum 5 tags allowed', 'warning');
+            return;
+        }
 
-        const tagsContainer = document.getElementById('tags-container');
-        const tagElement = document.createElement('div');
-        tagElement.className = 'tag';
-        tagElement.innerHTML = `
-            <span>${tag}</span>
-            <button type="button" class="tag-remove" data-tag="${tag}">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-
-        // Add remove listener
-        tagElement.querySelector('.tag-remove').addEventListener('click', () => {
-            this.removeTag(tag);
-        });
-
-        tagsContainer.appendChild(tagElement);
+        this.tags.push(normalizedTag);
+        this.renderTags();
+        this.autoSave();
     }
 
     /**
@@ -308,32 +294,23 @@ class PostEditor {
      */
     removeTag(tag) {
         this.tags = this.tags.filter(t => t !== tag);
-        
-        const tagsContainer = document.getElementById('tags-container');
-        const tagElement = tagsContainer.querySelector(`[data-tag="${tag}"]`);
-        if (tagElement) {
-            tagElement.parentElement.remove();
-        }
+        this.renderTags();
+        this.autoSave();
     }
 
+        /**     * Render tags     */    renderTags() {        const tagsContainer = document.getElementById('tags-container');        if (!tagsContainer) return;        tagsContainer.innerHTML = this.tags.map(tag => `            <span class="tag">                ${tag}                <button type="button" onclick="postEditor.removeTag('${tag}')">&times;</button>            </span>        `).join('');    }
+
     /**
-     * Generate URL slug from title
+     * Generate slug from title
      */
     generateSlug() {
         const titleInput = document.getElementById('post-title');
         const slugInput = document.getElementById('post-slug');
         
-        if (!titleInput || !slugInput || slugInput.value) return;
-
-        const slug = titleInput.value
-            .toLowerCase()
-            .trim()
-            .replace(/[^a-z0-9\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-')
-            .substring(0, 50);
-
-        slugInput.value = slug;
+        if (titleInput && slugInput && !slugInput.value) {
+            const slug = this.generateSlugFromTitle(titleInput.value);
+            slugInput.value = slug;
+        }
     }
 
     /**
@@ -346,17 +323,17 @@ class PostEditor {
             const fileExt = this.featuredImageFile.name.split('.').pop();
             const fileName = `${this.currentUser.id}/${Date.now()}.${fileExt}`;
 
-            const { error: uploadError } = await SupabaseConfig.client.storage
+            const { data, error } = await supabaseClient.storage
                 .from('images')
                 .upload(fileName, this.featuredImageFile);
 
-            if (uploadError) throw uploadError;
+            if (error) throw error;
 
-            const { data } = SupabaseConfig.client.storage
+            const { data: { publicUrl } } = supabaseClient.storage
                 .from('images')
                 .getPublicUrl(fileName);
 
-            return data.publicUrl;
+            return publicUrl;
         } catch (error) {
             console.error('Error uploading image:', error);
             throw error;
@@ -364,7 +341,7 @@ class PostEditor {
     }
 
     /**
-     * Save post as draft
+     * Save as draft
      */
     async saveDraft() {
         this.isDraft = true;
@@ -408,18 +385,16 @@ class PostEditor {
 
             // Prepare post data
             const postData = this.getPostData();
+            
+            console.log('Saving post data:', postData);
 
-            // Save to database
-            const { data, error } = await SupabaseConfig.client
-                .from('posts')
-                .insert([postData])
-                .select()
-                .single();
-
-            if (error) throw error;
+                                    // Save to database            const { data, error } = await supabaseClient                .from('posts')                .insert([postData])                .select()                .single();            if (error) {                console.error('Supabase error:', error);                throw error;            }            // Handle tags if any            if (this.tags.length > 0) {                try {                    await supabaseClient.rpc('handle_post_tags', {                        post_id: data.id,                        tag_names: this.tags                    });                } catch (tagError) {                    console.error('Error handling tags:', tagError);                    // Don't fail the whole operation for tag errors                }            }
 
             const action = this.isDraft ? 'saved as draft' : 'published';
             this.showToast('Success', `Post ${action} successfully!`, 'success');
+
+            // Clear local storage draft
+            localStorage.removeItem('blog_post_draft');
 
             // Redirect to post page
             setTimeout(() => {
@@ -428,7 +403,15 @@ class PostEditor {
 
         } catch (error) {
             console.error('Error saving post:', error);
-            this.showToast('Error', 'Failed to save post', 'error');
+            let errorMessage = 'Failed to save post';
+            
+            if (error.message) {
+                errorMessage = error.message;
+            } else if (error.error_description) {
+                errorMessage = error.error_description;
+            }
+            
+            this.showToast('Error', errorMessage, 'error');
         } finally {
             this.hideLoadingOverlay();
         }
@@ -440,10 +423,8 @@ class PostEditor {
     getPostData() {
         const title = document.getElementById('post-title').value.trim();
         const excerpt = document.getElementById('post-excerpt').value.trim();
-        const category = document.getElementById('post-category').value;
         const metaDescription = document.getElementById('meta-description').value.trim();
         const slug = document.getElementById('post-slug').value.trim();
-        const commentsEnabled = document.getElementById('comments-enabled').checked;
 
         const content = this.quill.root.innerHTML;
         const plainTextContent = this.quill.getText();
@@ -453,22 +434,17 @@ class PostEditor {
             content,
             excerpt: excerpt || this.generateExcerpt(plainTextContent),
             featured_image: this.featuredImageUrl,
-            category: category || null,
-            tags: this.tags.length > 0 ? this.tags : null,
             meta_description: metaDescription,
             slug: slug || this.generateSlugFromTitle(title),
             published: !this.isDraft,
-            comments_enabled: commentsEnabled,
-            author_id: this.currentUser.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            author_id: this.currentUser.id
         };
     }
 
     /**
      * Generate excerpt from content
      */
-    generateExcerpt(content, maxLength = 300) {
+    generateExcerpt(content, maxLength = 150) {
         if (!content) return '';
         
         const plainText = content.replace(/<[^>]*>/g, '').trim();
@@ -512,18 +488,21 @@ class PostEditor {
      * Save to local storage
      */
     saveToLocalStorage() {
-        const data = {
-            title: document.getElementById('post-title').value,
-            excerpt: document.getElementById('post-excerpt').value,
-            content: this.quill.root.innerHTML,
-            category: document.getElementById('post-category').value,
-            tags: this.tags,
-            metaDescription: document.getElementById('meta-description').value,
-            slug: document.getElementById('post-slug').value,
-            timestamp: Date.now()
-        };
+        try {
+            const data = {
+                title: document.getElementById('post-title')?.value || '',
+                excerpt: document.getElementById('post-excerpt')?.value || '',
+                content: this.quill?.root?.innerHTML || '',
+                tags: this.tags,
+                metaDescription: document.getElementById('meta-description')?.value || '',
+                slug: document.getElementById('post-slug')?.value || '',
+                timestamp: Date.now()
+            };
 
-        localStorage.setItem('blog_post_draft', JSON.stringify(data));
+            localStorage.setItem('blog_post_draft', JSON.stringify(data));
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
+        }
     }
 
     /**
@@ -556,42 +535,32 @@ class PostEditor {
      * Restore draft data
      */
     restoreDraft(data) {
-        document.getElementById('post-title').value = data.title || '';
-        document.getElementById('post-excerpt').value = data.excerpt || '';
-        document.getElementById('post-category').value = data.category || '';
-        document.getElementById('meta-description').value = data.metaDescription || '';
-        document.getElementById('post-slug').value = data.slug || '';
+        if (data.title) document.getElementById('post-title').value = data.title;
+        if (data.excerpt) document.getElementById('post-excerpt').value = data.excerpt;
+        if (data.metaDescription) document.getElementById('meta-description').value = data.metaDescription;
+        if (data.slug) document.getElementById('post-slug').value = data.slug;
 
-        if (data.content) {
+        if (data.content && this.quill) {
             this.quill.root.innerHTML = data.content;
         }
 
         if (data.tags) {
-            data.tags.forEach(tag => this.addTag(tag));
+            this.tags = data.tags;
+            this.renderTags();
         }
 
-        // Update character counters
         this.updateCharacterCounters();
-
-        this.showToast('Success', 'Draft restored successfully', 'success');
     }
 
     /**
      * Update character counters
      */
     updateCharacterCounters() {
-        const inputs = [
-            { input: '#post-title', counter: '#title-char-count' },
-            { input: '#post-excerpt', counter: '#excerpt-char-count' },
-            { input: '#meta-description', counter: '#meta-char-count' }
-        ];
-
-        inputs.forEach(({ input, counter }) => {
-            const inputElement = document.querySelector(input);
-            const counterElement = document.querySelector(counter);
-            
-            if (inputElement && counterElement) {
-                counterElement.textContent = inputElement.value.length;
+        const inputs = ['post-title', 'post-excerpt', 'meta-description'];
+        inputs.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.dispatchEvent(new Event('input'));
             }
         });
     }
@@ -600,10 +569,15 @@ class PostEditor {
      * Show loading overlay
      */
     showLoadingOverlay() {
-        const overlay = document.getElementById('loading-overlay');
-        if (overlay) {
-            overlay.classList.remove('hidden');
-        }
+        const overlay = document.createElement('div');
+        overlay.id = 'loading-overlay';
+        overlay.innerHTML = `
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p>Saving post...</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
     }
 
     /**
@@ -612,7 +586,7 @@ class PostEditor {
     hideLoadingOverlay() {
         const overlay = document.getElementById('loading-overlay');
         if (overlay) {
-            overlay.classList.add('hidden');
+            overlay.remove();
         }
     }
 
@@ -620,10 +594,11 @@ class PostEditor {
      * Show toast notification
      */
     showToast(title, message, type = 'success') {
-        // Use existing toast system from auth.js or create simple alert
-        if (window.authManager && typeof window.authManager.showToast === 'function') {
-            window.authManager.showToast(title, message, type);
+        // Use existing toast system if available
+        if (window.showToast) {
+            window.showToast(title, message, type);
         } else {
+            // Fallback to alert
             alert(`${title}: ${message}`);
         }
     }
@@ -632,14 +607,12 @@ class PostEditor {
      * Handle form submission
      */
     handleFormSubmit() {
-        const publishedToggle = document.getElementById('published');
-        if (publishedToggle && publishedToggle.checked) {
-            this.publishPost();
-        } else {
-            this.saveDraft();
-        }
+        // Default to save as draft
+        this.saveDraft();
     }
 }
 
-// Export for global use
-window.PostEditor = PostEditor; 
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.postEditor = new PostEditor();
+}); 

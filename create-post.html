@@ -296,13 +296,6 @@
     <script src="scripts/create-post.js"></script>
     <script src="scripts/main.js"></script>
     
-    <script>
-        // Initialize post editor
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof PostEditor !== 'undefined') {
-                window.postEditor = new PostEditor();
-            }
-        });
-    </script>
+        <script>        // Ensure proper initialization order        document.addEventListener('DOMContentLoaded', function() {            // Wait for all scripts to load            setTimeout(() => {                if (typeof PostEditor !== 'undefined') {                    window.postEditor = new PostEditor();                } else {                    console.error('PostEditor class not found');                }            }, 100);        });    </script>
 </body>
 </html> 
