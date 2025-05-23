@@ -38,9 +38,7 @@ class BlogManager {
         const searchBtn = document.getElementById('search-btn');
         
         if (searchInput && searchBtn) {
-            const debouncedSearch = SupabaseConfig.debounce(() => {
-                this.handleSearch(searchInput.value);
-            }, 500);
+                                                let searchTimeout;            const debouncedSearch = () => {                clearTimeout(searchTimeout);                searchTimeout = setTimeout(() => {                    this.handleSearch(searchInput.value);                }, 500);            };
             
             searchInput.addEventListener('input', debouncedSearch);
             searchBtn.addEventListener('click', () => this.handleSearch(searchInput.value));
@@ -103,22 +101,13 @@ class BlogManager {
                 this.showLoadingState(postsGrid);
             }
             
-            const { from, to } = SupabaseConfig.getPaginationParams(page, this.postsPerPage);
+            console.log('Loading posts from database...');
             
-            let query = SupabaseConfig.client
+            // Simple query - get published posts
+            let query = supabaseClient
                 .from('posts')
-                .select(`
-                    *,
-                    profiles (
-                        id,
-                        display_name,
-                        avatar_url
-                    ),
-                    likes (count),
-                    comments (count)
-                `)
-                .eq('published', true)
-                .range(from, to);
+                .select('*')
+                .eq('published', true);
             
             // Apply search filter
             if (this.currentSearch) {
@@ -138,9 +127,20 @@ class BlogManager {
                     break;
             }
             
+            // Add pagination
+            const from = (page - 1) * this.postsPerPage;
+            const to = from + this.postsPerPage - 1;
+            query = query.range(from, to);
+            
             const { data: posts, error, count } = await query;
             
-            if (error) throw error;
+            console.log('Posts loaded:', posts);
+            console.log('Error:', error);
+            
+            if (error) {
+                console.error('Supabase error:', error);
+                throw error;
+            }
             
             if (!append) {
                 this.renderPosts(posts);
@@ -211,13 +211,9 @@ class BlogManager {
      * @returns {string} - Post card HTML
      */
     createPostCard(post) {
-        const author = post.profiles || {};
-        const authorName = author.display_name || 'Anonymous';
-        const authorAvatar = this.getAvatarHTML(authorName);
-        const excerpt = SupabaseConfig.generateExcerpt(post.content);
-        const formattedDate = SupabaseConfig.formatRelativeTime(post.created_at);
-        const likesCount = post.likes?.[0]?.count || 0;
-        const commentsCount = post.comments?.[0]?.count || 0;
+        const authorName = 'Anonymous';
+        const excerpt = this.generateSimpleExcerpt(post.content);
+        const formattedDate = this.formatDate(post.created_at);
         
         return `
             <article class="post-card fade-in" data-post-id="${post.id}">
@@ -234,30 +230,68 @@ class BlogManager {
                         <span class="post-date">${formattedDate}</span>
                     </div>
                     
-                    <h3 class="post-card-title">${SupabaseConfig.sanitizeHTML(post.title)}</h3>
+                    <h3 class="post-card-title">${this.escapeHtml(post.title)}</h3>
                     
-                    <p class="post-card-excerpt">${SupabaseConfig.sanitizeHTML(excerpt)}</p>
+                    <p class="post-card-excerpt">${this.escapeHtml(excerpt)}</p>
                     
                     <div class="post-card-footer">
                         <div class="post-author">
-                            <div class="author-avatar">${authorAvatar}</div>
-                            <p class="author-name">${SupabaseConfig.sanitizeHTML(authorName)}</p>
+                            <div class="author-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <p class="author-name">${authorName}</p>
                         </div>
                         
                         <div class="post-stats">
                             <div class="post-stat">
                                 <i class="far fa-heart"></i>
-                                <span>${likesCount}</span>
+                                <span>0</span>
                             </div>
                             <div class="post-stat">
                                 <i class="far fa-comment"></i>
-                                <span>${commentsCount}</span>
+                                <span>0</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </article>
         `;
+    }
+    
+    /**
+     * Generate simple excerpt from content
+     */
+    generateSimpleExcerpt(content, maxLength = 150) {
+        if (!content) return '';
+        
+        const plainText = content.replace(/<[^>]*>/g, '').trim();
+        
+        if (plainText.length <= maxLength) {
+            return plainText;
+        }
+        
+        return plainText.substring(0, maxLength).trim() + '...';
+    }
+    
+    /**
+     * Format date simply
+     */
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+    
+    /**
+     * Escape HTML
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     /**
@@ -731,31 +765,6 @@ class BlogManager {
                 </div>
             `;
         }
-    }
-    
-    /**
-     * Get avatar HTML
-     * @param {string} displayName - User's display name
-     * @returns {string} - Avatar HTML
-     */
-    getAvatarHTML(displayName) {
-        const initials = this.getInitials(displayName);
-        return initials;
-    }
-    
-    /**
-     * Get user initials
-     * @param {string} name - User's name
-     * @returns {string} - User initials
-     */
-    getInitials(name) {
-        if (!name) return 'A';
-        
-        const words = name.split(' ');
-        if (words.length >= 2) {
-            return (words[0][0] + words[1][0]).toUpperCase();
-        }
-        return name.substring(0, 2).toUpperCase();
     }
 }
 
