@@ -26,8 +26,7 @@ const supabaseConfig = getSupabaseConfig();
 const SUPABASE_URL = supabaseConfig.url;
 const SUPABASE_ANON_KEY = supabaseConfig.anonKey;
 
-// Initialize Supabase client
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase clientconst supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);// SupabaseConfig uyumluluğu için client'ı ataif (typeof window !== 'undefined' && window.SupabaseConfig) {    window.SupabaseConfig.client = supabaseClient;}
 
 /**
  * Database Table Schemas

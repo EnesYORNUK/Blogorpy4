@@ -172,20 +172,7 @@ class PostManager {
         try {
             this.isLoading = true;
             
-            const { data: post, error } = await SupabaseConfig.client
-                .from('posts')
-                .select(`
-                    *,
-                    profiles (
-                        id,
-                        display_name,
-                        avatar_url,
-                        bio
-                    )
-                `)
-                .eq('id', this.postId)
-                .eq('published', true)
-                .single();
+                                    const { data: post, error } = await supabaseClient                .from('posts')                .select(`                    *,                    profiles (                        id,                        display_name,                        avatar_url,                        bio                    )                `)                .eq('id', this.postId)                .eq('published', true)                .single();
             
             if (error) throw error;
             
@@ -297,13 +284,13 @@ class PostManager {
     async loadPostStats() {
         try {
             // Load likes count
-            const { count: likesCount } = await SupabaseConfig.client
+            const { count: likesCount } = await supabaseClient
                 .from('likes')
                 .select('*', { count: 'exact', head: true })
                 .eq('post_id', this.postId);
             
             // Load comments count
-            const { count: commentsCount } = await SupabaseConfig.client
+            const { count: commentsCount } = await supabaseClient
                 .from('comments')
                 .select('*', { count: 'exact', head: true })
                 .eq('post_id', this.postId);

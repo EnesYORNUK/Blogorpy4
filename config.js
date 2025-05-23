@@ -387,46 +387,111 @@ function applyColorScheme(scheme = 'warm-brown') {
 }
 
 /**
- * Initialize configuration on page load
+ * Initialize configuration
  */
 function initializeConfig() {
-    // Apply color scheme
-    const colorScheme = getConfig('ui.theme.colorScheme', 'warm-brown');
-    applyColorScheme(colorScheme);
-    
-    // Set site title
-    const siteName = getConfig('site.name', 'Blogorpy');
-    document.title = siteName;
-    
-    // Set favicon if specified
-    const favicon = getConfig('site.favicon');
-    if (favicon) {
-        const link = document.createElement('link');
-        link.rel = 'icon';
-        link.href = favicon;
-        document.head.appendChild(link);
-    }
-    
-    // Update meta description
-    const description = getConfig('site.description');
-    if (description) {
-        let metaDesc = document.querySelector('meta[name="description"]');
-        if (!metaDesc) {
-            metaDesc = document.createElement('meta');
-            metaDesc.name = 'description';
-            document.head.appendChild(metaDesc);
+    try {
+        // Apply color scheme
+        applyColorScheme();
+        
+        // Set favicon if specified
+        if (BLOG_CONFIG.site.favicon) {
+            const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+            link.type = 'image/x-icon';
+            link.rel = 'shortcut icon';
+            link.href = BLOG_CONFIG.site.favicon;
+            document.getElementsByTagName('head')[0].appendChild(link);
         }
-        metaDesc.content = description;
+        
+        // Update page title
+        document.title = BLOG_CONFIG.seo.defaultTitle || BLOG_CONFIG.site.name;
+        
+        // Set meta description
+        const metaDescription = document.querySelector('meta[name="description"]');
+        if (metaDescription) {
+            metaDescription.setAttribute('content', BLOG_CONFIG.seo.defaultDescription || BLOG_CONFIG.site.description);
+        }
+        
+        console.log('Blog configuration initialized successfully');
+        
+    } catch (error) {
+        console.error('Error initializing configuration:', error);
     }
 }
 
-// Auto-initialize when DOM is loaded
+// SupabaseConfig uyumluluk katmanı
+window.SupabaseConfig = {
+    client: null, // supabaseClient ile doldurulacak
+    sanitizeHTML: function(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+    generateExcerpt: function(content, maxLength = 150) {
+        const textContent = content.replace(/<[^>]*>/g, '');
+        if (textContent.length <= maxLength) {
+            return textContent;
+        }
+        return textContent.substring(0, maxLength).trim() + '...';
+    },
+    formatDate: function(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    },
+    formatRelativeTime: function(dateString) {
+        const now = new Date();
+        const date = new Date(dateString);
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        const intervals = {
+            year: 31536000,
+            month: 2592000,
+            week: 604800,
+            day: 86400,
+            hour: 3600,
+            minute: 60
+        };
+        
+        for (const [unit, seconds] of Object.entries(intervals)) {
+            const interval = Math.floor(diffInSeconds / seconds);
+            if (interval >= 1) {
+                return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+            }
+        }
+        
+        return 'Just now';
+    },
+    handleError: function(error, operation = 'Operation') {
+        console.error(`${operation} failed:`, error);
+        return error.message || 'An unexpected error occurred. Please try again.';
+    },
+    getCurrentUser: function() {
+        return supabaseClient?.auth?.getUser();
+    },
+    getUserProfile: function(userId) {
+        return supabaseClient?.from('profiles')?.select('*')?.eq('id', userId)?.single();
+    }
+};
+
+// Sayfa yüklendiğinde yapılandırmayı başlat
 if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initializeConfig);
     } else {
         initializeConfig();
     }
+}
+
+// Global erişim için
+if (typeof window !== 'undefined') {
+    window.BLOG_CONFIG = BLOG_CONFIG;
+    window.getConfig = getConfig;
+    window.applyColorScheme = applyColorScheme;
+    window.initializeConfig = initializeConfig;
 }
 
 // Export for use in other modules
