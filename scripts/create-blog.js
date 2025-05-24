@@ -13,6 +13,21 @@ const saveDraftBtn = document.getElementById('saveDraftBtn');
 const titleCount = document.getElementById('titleCount');
 const contentCount = document.getElementById('contentCount');
 
+// Debug DOM Elements
+console.log('🔍 DOM Elements Check:', {
+    createBlogForm: !!createBlogForm,
+    titleInput: !!titleInput,
+    contentTextarea: !!contentTextarea,
+    imageInput: !!imageInput,
+    imageUploadArea: !!imageUploadArea,
+    imagePreview: !!imagePreview,
+    previewImg: !!previewImg,
+    removeImageBtn: !!removeImageBtn,
+    saveDraftBtn: !!saveDraftBtn,
+    titleCount: !!titleCount,
+    contentCount: !!contentCount
+});
+
 // State
 let uploadedImageFile = null;
 let currentUser = null;
@@ -20,6 +35,17 @@ let currentUser = null;
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Create Blog page loaded');
+    
+    // Test toast system immediately
+    setTimeout(() => {
+        if (window.toast) {
+            console.log('✅ Toast system available');
+            window.toast.info('Sayfa yüklendi, sistem hazır!', 'Test');
+        } else {
+            console.error('❌ Toast system not available');
+            alert('Toast sistem yüklenemedi!');
+        }
+    }, 500);
     
     checkAuthentication();
     setupEventListeners();
@@ -63,24 +89,52 @@ const checkAuthentication = async () => {
 
 // Setup Event Listeners
 const setupEventListeners = () => {
+    console.log('🔧 Setting up event listeners...');
+    
     // Form submission
-    createBlogForm.addEventListener('submit', handlePublishPost);
+    if (createBlogForm) {
+        console.log('✅ Form found, adding submit listener');
+        createBlogForm.addEventListener('submit', (e) => {
+            console.log('📝 Form submit event triggered');
+            handlePublishPost(e);
+        });
+    } else {
+        console.error('❌ Form not found!');
+    }
     
     // Save draft button
-    saveDraftBtn.addEventListener('click', handleSaveDraft);
+    if (saveDraftBtn) {
+        console.log('✅ Save draft button found');
+        saveDraftBtn.addEventListener('click', (e) => {
+            console.log('💾 Save draft clicked');
+            handleSaveDraft(e);
+        });
+    } else {
+        console.error('❌ Save draft button not found!');
+    }
     
     // Image upload
-    imageUploadArea.addEventListener('click', () => imageInput.click());
-    imageInput.addEventListener('change', handleImageUpload);
-    removeImageBtn.addEventListener('click', removeImage);
+    if (imageUploadArea && imageInput) {
+        console.log('✅ Image upload elements found');
+        imageUploadArea.addEventListener('click', () => imageInput.click());
+        imageInput.addEventListener('change', handleImageUpload);
+    }
+    
+    if (removeImageBtn) {
+        removeImageBtn.addEventListener('click', removeImage);
+    }
     
     // Prevent form submission on Enter in text inputs
-    titleInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            contentTextarea.focus();
-        }
-    });
+    if (titleInput) {
+        titleInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                contentTextarea.focus();
+            }
+        });
+    }
+    
+    console.log('✅ Event listeners setup complete');
 };
 
 // Setup Character Counters
@@ -153,34 +207,50 @@ const removeImage = () => {
 
 // Validate Form
 const validateForm = () => {
+    console.log('🔍 Starting form validation...');
     clearErrors();
     let isValid = true;
     
     // Title validation
+    console.log('📝 Title value:', titleInput?.value);
     if (!titleInput.value.trim()) {
+        console.log('❌ Title validation failed: empty');
         showFieldError(titleInput, 'Başlık gereklidir');
         isValid = false;
     } else if (titleInput.value.length > 100) {
+        console.log('❌ Title validation failed: too long');
         showFieldError(titleInput, 'Başlık 100 karakterden az olmalıdır');
         isValid = false;
+    } else {
+        console.log('✅ Title validation passed');
     }
     
     // Category validation
     const categorySelect = document.getElementById('blogCategory');
+    console.log('📂 Category value:', categorySelect?.value);
     if (!categorySelect.value) {
+        console.log('❌ Category validation failed: not selected');
         showFieldError(categorySelect, 'Lütfen bir kategori seçin');
         isValid = false;
+    } else {
+        console.log('✅ Category validation passed');
     }
     
     // Content validation
+    console.log('📄 Content value length:', contentTextarea?.value?.length);
     if (!contentTextarea.value.trim()) {
+        console.log('❌ Content validation failed: empty');
         showFieldError(contentTextarea, 'İçerik gereklidir');
         isValid = false;
     } else if (contentTextarea.value.length < 50) {
+        console.log('❌ Content validation failed: too short');
         showFieldError(contentTextarea, 'İçerik en az 50 karakter olmalıdır');
         isValid = false;
+    } else {
+        console.log('✅ Content validation passed');
     }
     
+    console.log('🔍 Form validation result:', isValid);
     return isValid;
 };
 
@@ -221,33 +291,59 @@ const handleSaveDraft = async (e) => {
 
 // Handle Publish Post
 const handlePublishPost = async (e) => {
+    console.log('🚀 handlePublishPost called');
     e.preventDefault();
     
+    console.log('👤 Current user:', currentUser);
+    console.log('🔧 Window objects:', {
+        supabaseClient: !!window.supabaseClient,
+        toast: !!window.toast,
+        AppConfig: !!window.AppConfig
+    });
+    
     if (!currentUser) {
+        console.log('❌ No current user');
         showMessage('Blog yazısı yayınlamak için lütfen giriş yapın.', 'error', 'Giriş Gerekli');
         return;
     }
     
+    console.log('✅ User authenticated, validating form...');
     if (!validateForm()) {
+        console.log('❌ Form validation failed');
         showMessage('Lütfen tüm gerekli alanları doldurun ve hataları düzeltin.', 'warning', 'Form Eksik');
         return;
     }
     
+    console.log('✅ Form validation passed');
+    
     // Show loading
     const submitBtn = createBlogForm.querySelector('button[type="submit"]');
-    submitBtn.classList.add('loading');
-    submitBtn.disabled = true;
+    if (submitBtn) {
+        console.log('✅ Submit button found, setting loading state');
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+    } else {
+        console.error('❌ Submit button not found');
+    }
     
     // Show start message
+    console.log('📢 Showing start message');
     showMessage('Blog yazısı yayınlanıyor...', 'info', 'Yayınlanıyor');
     
     try {
+        console.log('📦 Preparing post data...');
         const postData = await preparePostData(false); // false for published
+        console.log('📦 Post data prepared:', postData);
+        
+        console.log('💾 Saving to database...');
         const result = await saveBlogPost(postData);
+        console.log('💾 Save result:', result);
         
         if (result.success) {
+            console.log('✅ Post saved successfully');
             showMessage('Blog yazınız başarıyla yayınlandı! Tüm kullanıcılar artık okuyabilir. Blog sayfasına yönlendiriliyorsunuz...', 'success', 'Yayınlandı!');
             setTimeout(() => {
+                console.log('🔄 Redirecting to blogs page...');
                 window.location.href = 'blogs.html';
             }, 3000);
         } else {
@@ -255,11 +351,14 @@ const handlePublishPost = async (e) => {
         }
         
     } catch (error) {
-        console.error('Error publishing post:', error);
+        console.error('❌ Error publishing post:', error);
         showMessage(`Blog yazısı yayınlanırken bir sorun oluştu: ${error.message}`, 'error', 'Yayınlama Hatası');
     } finally {
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
+        if (submitBtn) {
+            console.log('🔄 Removing loading state');
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+        }
     }
 };
 
@@ -318,22 +417,33 @@ const uploadImage = async (file) => {
 
 // Save Blog Post to Database
 const saveBlogPost = async (postData) => {
+    console.log('💾 saveBlogPost called with data:', postData);
+    
     try {
-        // First check if posts table exists, if not create it
-        const { error: insertError } = await window.supabaseClient
+        console.log('🔗 Checking Supabase client:', !!window.supabaseClient);
+        
+        if (!window.supabaseClient) {
+            throw new Error('Supabase client not available');
+        }
+        
+        console.log('📡 Inserting data to posts table...');
+        const { data, error: insertError } = await window.supabaseClient
             .from('posts')
-            .insert([postData]);
+            .insert([postData])
+            .select();
+        
+        console.log('📡 Insert response:', { data, error: insertError });
         
         if (insertError) {
-            // If table doesn't exist, we'll get an error
-            console.error('Insert error:', insertError);
+            console.error('❌ Insert error details:', insertError);
             throw insertError;
         }
         
-        return { success: true };
+        console.log('✅ Post saved successfully:', data);
+        return { success: true, data };
         
     } catch (error) {
-        console.error('Database error:', error);
+        console.error('❌ Database error:', error);
         return { success: false, error: error.message };
     }
 };
