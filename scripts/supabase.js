@@ -2,47 +2,90 @@
 const SUPABASE_URL = 'https://mpolescjssadjshuygwj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wb2xlc2Nqc3NhZGpzaHV5Z3dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwODg2MTcsImV4cCI6MjA2MzY2NDYxN30.k1gRYfxHvOTYe8SUl08vLkqn4jpOeC0r5qfR68s2vtA';
 
+// Debug information for Netlify
+console.log('🌍 Environment:', {
+    hostname: window.location.hostname,
+    protocol: window.location.protocol,
+    isNetlify: window.location.hostname.includes('netlify.app'),
+    userAgent: navigator.userAgent
+});
+
 // Wait for Supabase to load and create client
 let supabase;
 let isSupabaseReady = false;
+let initializationAttempts = 0;
+const MAX_INIT_ATTEMPTS = 5;
 
 const initializeSupabase = () => {
-    if (window.supabase) {
+    initializationAttempts++;
+    console.log(`🔄 Supabase initialization attempt ${initializationAttempts}/${MAX_INIT_ATTEMPTS}`);
+    
+    if (typeof window === 'undefined') {
+        console.error('❌ Window object not available');
+        return false;
+    }
+    
+    if (!window.supabase) {
+        console.log('⏳ Supabase library not loaded yet, waiting...');
+        return false;
+    }
+    
+    try {
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         window.supabaseClient = supabase;
         isSupabaseReady = true;
         console.log('✅ Supabase client initialized successfully');
+        console.log('📡 Supabase URL:', SUPABASE_URL);
         return true;
-    } else {
-        console.log('⏳ Waiting for Supabase to load...');
+    } catch (error) {
+        console.error('❌ Error creating Supabase client:', error);
         return false;
     }
 };
 
-// Try to initialize immediately
-if (!initializeSupabase()) {
-    // If failed, try again when DOM is loaded
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!initializeSupabase()) {
-            // If still failed, wait a bit more
-            setTimeout(() => {
-                if (!initializeSupabase()) {
-                    console.error('❌ Failed to load Supabase client');
-                }
-            }, 1000);
-        }
-    });
+// Progressive initialization with multiple fallbacks
+const attemptInitialization = () => {
+    if (initializationAttempts >= MAX_INIT_ATTEMPTS) {
+        console.error('❌ Maximum initialization attempts reached. Supabase initialization failed.');
+        return;
+    }
+    
+    if (initializeSupabase()) {
+        console.log('🎉 Supabase initialized successfully');
+        // Initialize auth state after successful initialization
+        setTimeout(() => {
+            updateNavigation();
+            setupAuthStateListener();
+        }, 100);
+    } else {
+        // Exponential backoff for retries
+        const delay = Math.min(1000 * Math.pow(2, initializationAttempts - 1), 5000);
+        console.log(`⏳ Retrying in ${delay}ms...`);
+        setTimeout(attemptInitialization, delay);
+    }
+};
+
+// Start initialization process
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attemptInitialization);
+} else {
+    attemptInitialization();
 }
 
 // Check if user is logged in
 const checkAuth = async () => {
     if (!isSupabaseReady || !supabase) {
-        console.log('⚠️ Supabase not ready yet');
+        console.log('⚠️ Supabase not ready yet for auth check');
         return null;
     }
     
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+            console.error('Auth check error:', error);
+            return null;
+        }
+        console.log('👤 Auth check result:', user ? 'User logged in' : 'No user');
         return user;
     } catch (error) {
         console.error('Error checking auth:', error);
@@ -52,10 +95,14 @@ const checkAuth = async () => {
 
 // Update navigation based on auth state
 const updateNavigation = async () => {
-    const user = await checkAuth();
     const navMenu = document.querySelector('.nav-menu');
+    if (!navMenu) {
+        console.log('⚠️ Navigation menu not found');
+        return;
+    }
     
-    if (!navMenu) return;
+    const user = await checkAuth();
+    console.log('🔄 Updating navigation for user:', user ? 'authenticated' : 'guest');
     
     if (user) {
         // User is logged in
@@ -77,9 +124,13 @@ const updateNavigation = async () => {
             signupLink.classList.remove('nav-cta');
             signupLink.addEventListener('click', async (e) => {
                 e.preventDefault();
+                console.log('🚪 Logging out user...');
                 const { error } = await supabase.auth.signOut();
                 if (!error) {
+                    console.log('✅ User logged out successfully');
                     window.location.href = 'index.html';
+                } else {
+                    console.error('❌ Logout error:', error);
                 }
             });
         }
@@ -106,17 +157,19 @@ const updateNavigation = async () => {
     }
 };
 
-// Listen for auth state changes
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        if (supabase) {
-            supabase.auth.onAuthStateChange((event, session) => {
-                console.log('Auth state changed:', event, session);
-                updateNavigation();
-            });
-        }
-    }, 100);
-});
+// Setup auth state listener
+const setupAuthStateListener = () => {
+    if (!supabase) {
+        console.log('⚠️ Cannot setup auth listener - Supabase not ready');
+        return;
+    }
+    
+    supabase.auth.onAuthStateChange((event, session) => {
+        console.log('🔄 Auth state changed:', event, session ? 'User session active' : 'No session');
+        updateNavigation();
+    });
+};
 
-// Initialize auth state on page load
-document.addEventListener('DOMContentLoaded', updateNavigation); 
+// Export for global access
+window.checkAuth = checkAuth;
+window.updateNavigation = updateNavigation; 
