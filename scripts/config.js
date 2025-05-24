@@ -12,71 +12,66 @@ window.AppConfig = {
     supabase: {
         url: 'https://mpolescjssadjshuygwj.supabase.co',
         anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wb2xlc2Nqc3NhZGpzaHV5Z3dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwODg2MTcsImV4cCI6MjA2MzY2NDYxN30.k1gRYfxHvOTYe8SUl08vLkqn4jpOeC0r5qfR68s2vtA'
-    },
+    }
+};
+
+// Initialize debug settings after environment is set
+window.AppConfig.debug = {
+    enabled: window.AppConfig.environment.isDevelopment || 
+             window.location.search.includes('debug=true') ||
+             localStorage.getItem('debug-mode') === 'true',
     
-    // Debug settings
-    debug: {
-        enabled: function() {
-            return this.environment.isDevelopment || 
-                   window.location.search.includes('debug=true') ||
-                   localStorage.getItem('debug-mode') === 'true';
-        }.call(this),
+    logLevel: window.AppConfig.environment.isDevelopment ? 'verbose' :
+              window.AppConfig.environment.isNetlify ? 'info' : 'error'
+};
+
+// Initialize performance settings after environment is set
+window.AppConfig.performance = {
+    supabaseRetryAttempts: window.AppConfig.environment.isNetlify ? 8 : 5,
+    supabaseRetryDelay: window.AppConfig.environment.isNetlify ? 2000 : 1000,
+    loadTimeout: window.AppConfig.environment.isNetlify ? 10000 : 5000
+};
+
+// URLs and paths
+window.AppConfig.urls = {
+    base: window.location.origin,
+    api: window.location.origin, // For future API endpoints
+    assets: window.location.origin + '/'
+};
+
+// Feature flags
+window.AppConfig.features = {
+    offlineSupport: false,
+    analytics: window.AppConfig.environment.isProduction,
+    errorReporting: window.AppConfig.environment.isProduction,
+    performance: window.AppConfig.environment.isProduction
+};
+
+// Logging function
+window.AppConfig.log = function(level, message, data) {
+    if (!this.debug.enabled && level === 'debug') return;
+    
+    const levels = { error: 0, warn: 1, info: 2, debug: 3, verbose: 4 };
+    const currentLevel = levels[this.debug.logLevel] || 2;
+    const messageLevel = levels[level] || 2;
+    
+    if (messageLevel <= currentLevel) {
+        const timestamp = new Date().toISOString();
+        const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
         
-        logLevel: function() {
-            if (this.environment.isDevelopment) return 'verbose';
-            if (this.environment.isNetlify) return 'info';
-            return 'error';
-        }.call(this)
-    },
-    
-    // Performance settings
-    performance: {
-        supabaseRetryAttempts: this.environment.isNetlify ? 8 : 5,
-        supabaseRetryDelay: this.environment.isNetlify ? 2000 : 1000,
-        loadTimeout: this.environment.isNetlify ? 10000 : 5000
-    },
-    
-    // URLs and paths
-    urls: {
-        base: window.location.origin,
-        api: window.location.origin, // For future API endpoints
-        assets: window.location.origin + '/'
-    },
-    
-    // Feature flags
-    features: {
-        offlineSupport: false,
-        analytics: this.environment.isProduction,
-        errorReporting: this.environment.isProduction,
-        performance: this.environment.isProduction
-    },
-    
-    // Logging function
-    log: function(level, message, data) {
-        if (!this.debug.enabled && level === 'debug') return;
-        
-        const levels = { error: 0, warn: 1, info: 2, debug: 3, verbose: 4 };
-        const currentLevel = levels[this.debug.logLevel] || 2;
-        const messageLevel = levels[level] || 2;
-        
-        if (messageLevel <= currentLevel) {
-            const timestamp = new Date().toISOString();
-            const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
-            
-            switch (level) {
-                case 'error':
-                    console.error(prefix, message, data || '');
-                    break;
-                case 'warn':
-                    console.warn(prefix, message, data || '');
-                    break;
-                case 'debug':
-                case 'verbose':
-                    console.debug(prefix, message, data || '');
-                    break;
-                default:
-                    console.log(prefix, message, data || '');
-            }
+        switch (level) {
+            case 'error':
+                console.error(prefix, message, data || '');
+                break;
+            case 'warn':
+                console.warn(prefix, message, data || '');
+                break;
+            case 'debug':
+            case 'verbose':
+                console.debug(prefix, message, data || '');
+                break;
+            default:
+                console.log(prefix, message, data || '');
         }
     }
 };
