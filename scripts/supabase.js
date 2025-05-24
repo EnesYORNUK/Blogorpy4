@@ -81,14 +81,28 @@ const checkAuth = async () => {
     
     try {
         const { data: { user }, error } = await supabase.auth.getUser();
+        
+        // Handle specific auth errors gracefully
         if (error) {
-            console.error('Auth check error:', error);
+            // AuthSessionMissingError is normal when user is not logged in
+            if (error.name === 'AuthSessionMissingError' || error.message.includes('Auth session missing')) {
+                console.log('👤 No active session (user not logged in)');
+                return null;
+            }
+            // Log other auth errors
+            console.warn('⚠️ Auth check warning:', error.message);
             return null;
         }
+        
         console.log('👤 Auth check result:', user ? 'User logged in' : 'No user');
         return user;
     } catch (error) {
-        console.error('Error checking auth:', error);
+        // Handle network or other errors
+        if (error.message.includes('Auth session missing')) {
+            console.log('👤 No active session (user not logged in)');
+            return null;
+        }
+        console.error('❌ Auth check failed:', error.message);
         return null;
     }
 };
