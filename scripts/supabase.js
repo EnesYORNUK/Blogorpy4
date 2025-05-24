@@ -57,33 +57,7 @@ const updateNavigation = async () => {
     
     if (!navMenu) return;
     
-    if (user) {
-        // User is logged in
-        const loginLink = navMenu.querySelector('a[href="login.html"]');
-        const signupLink = navMenu.querySelector('a[href="signup.html"]');
-        
-        if (loginLink) {
-            loginLink.textContent = 'Profile';
-            loginLink.href = 'profile.html';
-            loginLink.classList.remove('nav-cta');
-            // Remove any existing click listeners by cloning the element
-            const newLoginLink = loginLink.cloneNode(true);
-            loginLink.parentNode.replaceChild(newLoginLink, loginLink);
-        }
-        
-        if (signupLink) {
-            signupLink.textContent = 'Logout';
-            signupLink.href = '#';
-            signupLink.classList.remove('nav-cta');
-            signupLink.addEventListener('click', async (e) => {
-                e.preventDefault();
-                const { error } = await supabase.auth.signOut();
-                if (!error) {
-                    window.location.href = 'index.html';
-                }
-            });
-        }
-    }
+        if (user) {        // User is logged in        const loginLink = navMenu.querySelector('a[href="login.html"]');        const signupLink = navMenu.querySelector('a[href="signup.html"]');                if (loginLink) {            loginLink.textContent = 'Profile';            loginLink.href = 'profile.html';            loginLink.classList.remove('nav-cta');            // Remove any existing click listeners by cloning the element            const newLoginLink = loginLink.cloneNode(true);            loginLink.parentNode.replaceChild(newLoginLink, loginLink);        }                if (signupLink) {            signupLink.textContent = 'Logout';            signupLink.href = '#';            signupLink.classList.remove('nav-cta');            signupLink.addEventListener('click', async (e) => {                e.preventDefault();                const { error } = await supabase.auth.signOut();                if (!error) {                    window.location.href = 'index.html';                }            });        }                // Add "Create Blog" link if not exists        const blogsLink = navMenu.querySelector('a[href="blogs.html"]');        if (blogsLink && !navMenu.querySelector('a[href="create-blog.html"]')) {            const createBlogLink = document.createElement('a');            createBlogLink.href = 'create-blog.html';            createBlogLink.className = 'nav-link';            createBlogLink.textContent = 'Create Blog';            createBlogLink.style.color = '#6B4423';            createBlogLink.style.fontWeight = '600';                        // Insert after blogs link            blogsLink.parentNode.insertBefore(createBlogLink, blogsLink.nextSibling);        }    } else {        // User is not logged in, remove create blog link if exists        const createBlogLink = navMenu.querySelector('a[href="create-blog.html"]');        if (createBlogLink) {            createBlogLink.remove();        }    }
 };
 
 // Listen for auth state changes
