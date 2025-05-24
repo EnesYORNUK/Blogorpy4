@@ -13,6 +13,20 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('📊 Supabase CDN:', !!window.supabase);
     console.log('🔧 Supabase Client:', !!window.supabaseClient);
     
+    // More detailed debug
+    if (!window.supabase) {
+        console.error('❌ Supabase CDN not loaded! Check network connection.');
+    }
+    
+    if (!window.supabaseClient) {
+        console.error('❌ Supabase Client not initialized! Check supabase.js');
+        console.log('🔍 Retrying in 2 seconds...');
+        setTimeout(() => {
+            console.log('🔄 Retry - Supabase CDN:', !!window.supabase);
+            console.log('🔄 Retry - Supabase Client:', !!window.supabaseClient);
+        }, 2000);
+    }
+    
     setupPasswordToggles();
     
     if (loginForm) {
@@ -74,10 +88,24 @@ const setupLoginForm = () => {
         try {
             console.log('🔑 Attempting login for:', email);
             
-            // Check if Supabase client is available
+            // Check if Supabase client is available with retry
             if (!window.supabaseClient) {
-                throw new Error('Supabase client not initialized. Please refresh the page.');
+                console.log('⏳ Supabase client not ready, waiting...');
+                
+                // Wait up to 5 seconds for Supabase to initialize
+                let attempts = 0;
+                while (!window.supabaseClient && attempts < 10) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    attempts++;
+                    console.log(`🔄 Attempt ${attempts}/10 - Checking Supabase client...`);
+                }
+                
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not initialized after waiting. Please refresh the page.');
+                }
             }
+            
+            console.log('✅ Supabase client ready, proceeding with login...');
             
             const { data, error } = await window.supabaseClient.auth.signInWithPassword({
                 email: email,

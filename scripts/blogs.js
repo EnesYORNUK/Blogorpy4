@@ -108,13 +108,21 @@ const loadMoreBtn = document.getElementById('loadMoreBtn');
 const resultsCount = document.getElementById('resultsCount');
 const newsletterForm = document.getElementById('newsletterForm');
 
-// Initializedocument.addEventListener('DOMContentLoaded', () => {    setupEventListeners();    loadBlogPosts();});
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    setupEventListeners();
+    loadBlogPosts();
+});
 
 // Setup event listeners
 const setupEventListeners = () => {
     // Search functionality
     if (searchInput) {
-                searchInput.addEventListener('input', BlogorpyUtils.debounce((e) => {            searchQuery = e.target.value.toLowerCase();            displayedPosts = 6;            renderBlogPosts();        }, 300));
+        searchInput.addEventListener('input', BlogorpyUtils.debounce((e) => {
+            searchQuery = e.target.value.toLowerCase();
+            displayedPosts = 6;
+            renderBlogPosts();
+        }, 300));
     }
 
     // Filter functionality
@@ -150,7 +158,73 @@ const setupEventListeners = () => {
     });
 };
 
-// Load blog posts from Supabaseconst loadBlogPosts = async () => {    try {        if (!window.supabaseClient) {            console.log('⏳ Waiting for Supabase...');            setTimeout(loadBlogPosts, 1000);            return;        }        const { data: posts, error } = await window.supabaseClient            .from('posts')            .select('*')            .eq('status', 'published')            .order('created_at', { ascending: false });        if (error) {            console.error('Error loading posts:', error);            // Fall back to mock data            renderBlogPosts();            return;        }        if (posts && posts.length > 0) {            // Replace mock data with real posts            allBlogPosts.splice(0, allBlogPosts.length);                        posts.forEach(post => {                allBlogPosts.push({                    id: post.id,                    title: post.title,                    excerpt: post.content.substring(0, 150) + '...',                    category: post.category,                    author: post.author_name,                    date: new Date(post.created_at).toLocaleDateString('en-US', {                         year: 'numeric',                         month: 'short',                         day: 'numeric'                     }),                    readTime: Math.ceil(post.content.length / 200) + ' min read',                    image: post.image_url || `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000000)}?w=800&h=600&fit=crop`                });            });                        console.log(`✅ Loaded ${posts.length} blog posts from Supabase`);        }                renderBlogPosts();    } catch (error) {        console.error('Error loading blog posts:', error);        // Fall back to mock data        renderBlogPosts();    }};// Filter and search postsconst getFilteredPosts = () => {    return allBlogPosts.filter(post => {        const matchesFilter = currentFilter === 'all' || post.category === currentFilter;        const matchesSearch = searchQuery === '' ||             post.title.toLowerCase().includes(searchQuery) ||            post.excerpt.toLowerCase().includes(searchQuery) ||            post.author.toLowerCase().includes(searchQuery);                return matchesFilter && matchesSearch;    });};
+// Load blog posts from Supabase
+const loadBlogPosts = async () => {
+    try {
+        if (!window.supabaseClient) {
+            console.log('⏳ Waiting for Supabase...');
+            setTimeout(loadBlogPosts, 1000);
+            return;
+        }
+
+        const { data: posts, error } = await window.supabaseClient
+            .from('posts')
+            .select('*')
+            .eq('status', 'published')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error loading posts:', error);
+            // Fall back to mock data
+            renderBlogPosts();
+            return;
+        }
+
+        if (posts && posts.length > 0) {
+            // Replace mock data with real posts
+            allBlogPosts.splice(0, allBlogPosts.length);
+            
+            posts.forEach(post => {
+                allBlogPosts.push({
+                    id: post.id,
+                    title: post.title,
+                    excerpt: post.content.substring(0, 150) + '...',
+                    category: post.category,
+                    author: post.author_name,
+                    date: new Date(post.created_at).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    }),
+                    readTime: Math.ceil(post.content.length / 200) + ' min read',
+                    image: post.image_url || `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000000)}?w=800&h=600&fit=crop`
+                });
+            });
+            
+            console.log(`✅ Loaded ${posts.length} blog posts from Supabase`);
+        }
+        
+        renderBlogPosts();
+
+    } catch (error) {
+        console.error('Error loading blog posts:', error);
+        // Fall back to mock data
+        renderBlogPosts();
+    }
+};
+
+// Filter and search posts
+const getFilteredPosts = () => {
+    return allBlogPosts.filter(post => {
+        const matchesFilter = currentFilter === 'all' || post.category === currentFilter;
+        const matchesSearch = searchQuery === '' || 
+            post.title.toLowerCase().includes(searchQuery) ||
+            post.excerpt.toLowerCase().includes(searchQuery) ||
+            post.author.toLowerCase().includes(searchQuery);
+        
+        return matchesFilter && matchesSearch;
+    });
+};
 
 // Render blog posts
 const renderBlogPosts = () => {
