@@ -41,22 +41,23 @@ const checkAuthentication = async () => {
         
         if (!user) {
             // User not logged in, redirect to login
-            showMessage('Blog yazısı oluşturmak için lütfen giriş yapın.', 'error');
+            showMessage('Blog yazısı oluşturmak için önce hesabınıza giriş yapmanız gerekiyor.', 'warning', 'Giriş Gerekli');
             setTimeout(() => {
                 window.location.href = 'login.html';
-            }, 2000);
+            }, 3000);
             return;
         }
         
         currentUser = user;
         console.log('✅ User authenticated:', user.email);
+        showMessage(`Hoş geldiniz! Blog yazısı oluşturmaya hazırsınız.`, 'success', 'Hazırsınız!');
         
     } catch (error) {
         console.error('Authentication error:', error);
-        showMessage('Kimlik doğrulama başarısız. Lütfen tekrar deneyin.', 'error');
+        showMessage('Kimlik doğrulama sırasında bir sorun oluştu. Lütfen tekrar giriş yapmayı deneyin.', 'error', 'Kimlik Doğrulama Hatası');
         setTimeout(() => {
             window.location.href = 'login.html';
-        }, 2000);
+        }, 3000);
     }
 };
 
@@ -116,17 +117,20 @@ const handleImageUpload = (e) => {
     
     // Validate file type
     if (!file.type.startsWith('image/')) {
-        showMessage('Lütfen geçerli bir resim dosyası seçin.', 'error');
+        showMessage('Lütfen geçerli bir resim dosyası seçin (PNG, JPG, GIF).', 'error', 'Geçersiz Dosya');
         return;
     }
     
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-        showMessage('Resim boyutu 5MB\'dan az olmalıdır.', 'error');
+        showMessage('Resim boyutu 5MB\'dan küçük olmalıdır. Lütfen daha küçük bir resim seçin.', 'error', 'Dosya Çok Büyük');
         return;
     }
     
     uploadedImageFile = file;
+    
+    // Show success message
+    showMessage(`Resim seçildi: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, 'success', 'Resim Yüklendi');
     
     // Show preview
     const reader = new FileReader();
@@ -185,7 +189,7 @@ const handleSaveDraft = async (e) => {
     e.preventDefault();
     
     if (!currentUser) {
-        showMessage('Taslak kaydetmek için lütfen giriş yapın.', 'error');
+        showMessage('Taslak kaydetmek için lütfen giriş yapın.', 'error', 'Giriş Gerekli');
         return;
     }
     
@@ -193,19 +197,22 @@ const handleSaveDraft = async (e) => {
     saveDraftBtn.classList.add('loading');
     saveDraftBtn.disabled = true;
     
+    // Show start message
+    showMessage('Taslak kaydediliyor...', 'info', 'İşlem Başladı');
+    
     try {
         const postData = await preparePostData(true); // true for draft
         const result = await saveBlogPost(postData);
         
         if (result.success) {
-            showMessage('Taslak başarıyla kaydedildi! 📝', 'success');
+            showMessage('Taslak başarıyla kaydedildi! İstediğiniz zaman geri gelip düzenleyebilirsiniz.', 'success', 'Taslak Kaydedildi');
         } else {
             throw new Error(result.error);
         }
         
     } catch (error) {
         console.error('Error saving draft:', error);
-        showMessage('Taslak kaydedilirken hata oluştu: ' + error.message, 'error');
+        showMessage(`Taslak kaydedilirken bir sorun oluştu: ${error.message}`, 'error', 'Kaydetme Hatası');
     } finally {
         saveDraftBtn.classList.remove('loading');
         saveDraftBtn.disabled = false;
@@ -217,11 +224,12 @@ const handlePublishPost = async (e) => {
     e.preventDefault();
     
     if (!currentUser) {
-        showMessage('Blog yazısı yayınlamak için lütfen giriş yapın.', 'error');
+        showMessage('Blog yazısı yayınlamak için lütfen giriş yapın.', 'error', 'Giriş Gerekli');
         return;
     }
     
     if (!validateForm()) {
+        showMessage('Lütfen tüm gerekli alanları doldurun ve hataları düzeltin.', 'warning', 'Form Eksik');
         return;
     }
     
@@ -230,22 +238,25 @@ const handlePublishPost = async (e) => {
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
     
+    // Show start message
+    showMessage('Blog yazısı yayınlanıyor...', 'info', 'Yayınlanıyor');
+    
     try {
         const postData = await preparePostData(false); // false for published
         const result = await saveBlogPost(postData);
         
         if (result.success) {
-            showMessage('Blog yazısı başarıyla yayınlandı! 🎉 Yönlendiriliyorsunuz...', 'success');
+            showMessage('Blog yazınız başarıyla yayınlandı! Tüm kullanıcılar artık okuyabilir. Blog sayfasına yönlendiriliyorsunuz...', 'success', 'Yayınlandı!');
             setTimeout(() => {
                 window.location.href = 'blogs.html';
-            }, 2000);
+            }, 3000);
         } else {
             throw new Error(result.error);
         }
         
     } catch (error) {
         console.error('Error publishing post:', error);
-        showMessage('Blog yazısı yayınlanırken hata oluştu: ' + error.message, 'error');
+        showMessage(`Blog yazısı yayınlanırken bir sorun oluştu: ${error.message}`, 'error', 'Yayınlama Hatası');
     } finally {
         submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
@@ -327,44 +338,47 @@ const saveBlogPost = async (postData) => {
     }
 };
 
-// Show Message
-const showMessage = (message, type = 'info') => {
-    // Remove existing messages
-    const existingMessages = document.querySelectorAll('.success-message, .error-message');
-    existingMessages.forEach(msg => msg.remove());
-    
-    const messageDiv = document.createElement('div');
-    messageDiv.className = type === 'success' ? 'success-message' : 'error-message';
-    messageDiv.textContent = message;
-    
-    // Add styling
-    messageDiv.style.cssText = `
-        padding: 12px 16px;
-        margin-bottom: 20px;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 500;
-        background-color: ${type === 'success' ? '#d4edda' : '#f8d7da'};
-        color: ${type === 'success' ? '#155724' : '#721c24'};
-        border: 1px solid ${type === 'success' ? '#c3e6cb' : '#f5c6cb'};
-    `;
-    
-    const card = document.querySelector('.create-blog-card');
-    card.insertBefore(messageDiv, card.firstChild);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        messageDiv.remove();
-    }, 5000);
+// Show Message using Toast System
+const showMessage = (message, type = 'info', title = '') => {
+    // Use the global toast system
+    if (window.toast) {
+        switch (type) {
+            case 'success':
+                window.toast.success(message, title || 'Başarılı!');
+                break;
+            case 'error':
+                window.toast.error(message, title || 'Hata!');
+                break;
+            case 'warning':
+                window.toast.warning(message, title || 'Uyarı!');
+                break;
+            default:
+                window.toast.info(message, title || 'Bilgi');
+        }
+    } else {
+        // Fallback to console if toast system not available
+        console.log(`${type.toUpperCase()}: ${message}`);
+    }
 };
 
-// Show Field Error
+// Show Field Error with Toast
 const showFieldError = (field, message) => {
     field.classList.add('error');
+    
+    // Show toast notification for the error
+    showMessage(message, 'error', 'Form Hatası');
     
     const errorDiv = document.createElement('div');
     errorDiv.className = 'field-error';
     errorDiv.textContent = message;
+    
+    // Add visual styling to error
+    errorDiv.style.cssText = `
+        color: #721c24;
+        font-size: 12px;
+        margin-top: 4px;
+        font-weight: 500;
+    `;
     
     field.parentNode.appendChild(errorDiv);
 };

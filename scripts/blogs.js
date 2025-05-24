@@ -168,6 +168,12 @@ const loadBlogPosts = async () => {
         }
 
         console.log('🔄 Loading blog posts from Supabase...');
+        
+        // Show loading notification
+        if (window.toast) {
+            window.toast.info('Blog yazıları yükleniyor...', 'Yükleniyor');
+        }
+        
         const { data: posts, error } = await window.supabaseClient
             .from('posts')
             .select('*')
@@ -178,6 +184,9 @@ const loadBlogPosts = async () => {
             console.error('Error loading posts:', error);
             // Fall back to mock data
             console.log('📝 Using mock data as fallback');
+            if (window.toast) {
+                window.toast.warning('Veritabanına bağlanılamadı, örnek veriler gösteriliyor.', 'Bağlantı Sorunu');
+            }
             renderBlogPosts();
             return;
         }
@@ -204,8 +213,14 @@ const loadBlogPosts = async () => {
             });
             
             console.log(`✅ Loaded ${posts.length} blog posts from Supabase`);
+            if (window.toast) {
+                window.toast.success(`${posts.length} blog yazısı başarıyla yüklendi!`, 'Yükleme Tamamlandı');
+            }
         } else {
             console.log('📝 No published posts found, using mock data');
+            if (window.toast) {
+                window.toast.info('Henüz yayınlanmış blog yazısı bulunmuyor, örnek veriler gösteriliyor.', 'Yazı Bulunamadı');
+            }
         }
         
         renderBlogPosts();
@@ -214,6 +229,9 @@ const loadBlogPosts = async () => {
         console.error('Error loading blog posts:', error);
         // Fall back to mock data
         console.log('📝 Using mock data due to error');
+        if (window.toast) {
+            window.toast.error('Blog yazıları yüklenirken bir hata oluştu, örnek veriler gösteriliyor.', 'Yükleme Hatası');
+        }
         renderBlogPosts();
     }
 };
