@@ -15,89 +15,112 @@ window.AppConfig = {
     }
 };
 
-// Initialize debug settings after environment is set
-window.AppConfig.debug = {
-    enabled: window.AppConfig.environment.isDevelopment || 
-             window.location.search.includes('debug=true') ||
-             localStorage.getItem('debug-mode') === 'true',
-    
-    logLevel: window.AppConfig.environment.isDevelopment ? 'verbose' :
-              window.AppConfig.environment.isNetlify ? 'info' : 'error'
-};
-
-// Initialize performance settings after environment is set
-window.AppConfig.performance = {
-    supabaseRetryAttempts: window.AppConfig.environment.isNetlify ? 8 : 5,
-    supabaseRetryDelay: window.AppConfig.environment.isNetlify ? 2000 : 1000,
-    loadTimeout: window.AppConfig.environment.isNetlify ? 10000 : 5000
-};
-
-// URLs and paths
-window.AppConfig.urls = {
-    base: window.location.origin,
-    api: window.location.origin, // For future API endpoints
-    assets: window.location.origin + '/'
-};
-
-// Feature flags
-window.AppConfig.features = {
-    offlineSupport: false,
-    analytics: window.AppConfig.environment.isProduction,
-    errorReporting: window.AppConfig.environment.isProduction,
-    performance: window.AppConfig.environment.isProduction
-};
-
-// Logging function
-window.AppConfig.log = function(level, message, data) {
-    if (!this.debug.enabled && level === 'debug') return;
-    
-    const levels = { error: 0, warn: 1, info: 2, debug: 3, verbose: 4 };
-    const currentLevel = levels[this.debug.logLevel] || 2;
-    const messageLevel = levels[level] || 2;
-    
-    if (messageLevel <= currentLevel) {
-        const timestamp = new Date().toISOString();
-        const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
-        
-        switch (level) {
-            case 'error':
-                console.error(prefix, message, data || '');
-                break;
-            case 'warn':
-                console.warn(prefix, message, data || '');
-                break;
-            case 'debug':
-            case 'verbose':
-                console.debug(prefix, message, data || '');
-                break;
-            default:
-                console.log(prefix, message, data || '');
+// Safe initialization function
+const initializeAppConfig = () => {
+    try {
+        // Ensure environment exists
+        if (!window.AppConfig.environment) {
+            console.warn('⚠️ Environment not ready, retrying...');
+            setTimeout(initializeAppConfig, 100);
+            return;
         }
+
+        // Initialize debug settings
+        window.AppConfig.debug = {
+            enabled: window.AppConfig.environment.isDevelopment || 
+                     window.location.search.includes('debug=true') ||
+                     localStorage.getItem('debug-mode') === 'true',
+            
+            logLevel: window.AppConfig.environment.isDevelopment ? 'verbose' :
+                      window.AppConfig.environment.isNetlify ? 'info' : 'error'
+        };
+
+        // Initialize performance settings
+        window.AppConfig.performance = {
+            supabaseRetryAttempts: window.AppConfig.environment.isNetlify ? 8 : 5,
+            supabaseRetryDelay: window.AppConfig.environment.isNetlify ? 2000 : 1000,
+            loadTimeout: window.AppConfig.environment.isNetlify ? 10000 : 5000
+        };
+
+        // URLs and paths
+        window.AppConfig.urls = {
+            base: window.location.origin,
+            api: window.location.origin,
+            assets: window.location.origin + '/'
+        };
+
+        // Feature flags
+        window.AppConfig.features = {
+            offlineSupport: false,
+            analytics: window.AppConfig.environment.isProduction,
+            errorReporting: window.AppConfig.environment.isProduction,
+            performance: window.AppConfig.environment.isProduction
+        };
+
+        // Logging function
+        window.AppConfig.log = function(level, message, data) {
+            if (!this.debug.enabled && level === 'debug') return;
+            
+            const levels = { error: 0, warn: 1, info: 2, debug: 3, verbose: 4 };
+            const currentLevel = levels[this.debug.logLevel] || 2;
+            const messageLevel = levels[level] || 2;
+            
+            if (messageLevel <= currentLevel) {
+                const timestamp = new Date().toISOString();
+                const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
+                
+                switch (level) {
+                    case 'error':
+                        console.error(prefix, message, data || '');
+                        break;
+                    case 'warn':
+                        console.warn(prefix, message, data || '');
+                        break;
+                    case 'debug':
+                    case 'verbose':
+                        console.debug(prefix, message, data || '');
+                        break;
+                    default:
+                        console.log(prefix, message, data || '');
+                }
+            }
+        };
+
+        // Mark as initialized
+        window.AppConfig.initialized = true;
+
+        // Initialize configuration
+        window.AppConfig.log('info', '🚀 AppConfig initialized', {
+            environment: window.AppConfig.environment,
+            debug: window.AppConfig.debug,
+            features: window.AppConfig.features
+        });
+
+        // Add global utilities
+        window.log = window.AppConfig.log.bind(window.AppConfig);
+
+        // Environment-specific setup
+        if (window.AppConfig.environment.isNetlify) {
+            window.AppConfig.log('info', '🌐 Running on Netlify');
+            
+            // Netlify-specific optimizations
+            window.addEventListener('load', () => {
+                window.AppConfig.log('info', '📊 Page load complete');
+            });
+            
+        } else if (window.AppConfig.environment.isLocalhost) {
+            window.AppConfig.log('info', '💻 Running locally');
+            
+            // Development helpers
+            window.config = window.AppConfig;
+        }
+
+    } catch (error) {
+        console.error('❌ AppConfig initialization failed:', error);
+        // Retry after a short delay
+        setTimeout(initializeAppConfig, 200);
     }
 };
 
-// Initialize configuration
-window.AppConfig.log('info', '🚀 AppConfig initialized', {
-    environment: window.AppConfig.environment,
-    debug: window.AppConfig.debug,
-    features: window.AppConfig.features
-});
-
-// Add global utilities
-window.log = window.AppConfig.log.bind(window.AppConfig);
-
-// Environment-specific setup
-if (window.AppConfig.environment.isNetlify) {
-    window.AppConfig.log('info', '🌐 Running on Netlify');
-    
-    // Netlify-specific optimizations
-    window.addEventListener('load', () => {
-        window.AppConfig.log('info', '📊 Page load complete');
-    });
-    
-} else if (window.AppConfig.environment.isLocalhost) {
-    window.AppConfig.log('info', '💻 Running locally');
-    
-    // Development helpers
-    window.config = window.AppConfig; // Easy access in console
-} 
+// Start initialization
+initializeAppConfig(); 
