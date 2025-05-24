@@ -1,5 +1,99 @@
 // Create Blog JavaScript
 
+// Test function to check Supabase connection and auth
+const testSupabaseConnection = async () => {
+    console.log('🧪 Testing Supabase connection and auth...');
+    
+    try {
+        // Test 1: Check if Supabase client exists
+        if (!window.supabaseClient) {
+            console.error('❌ Supabase client not found');
+            if (window.toast) {
+                window.toast.error('Supabase bağlantısı bulunamadı!');
+            } else {
+                alert('Supabase bağlantısı bulunamadı!');
+            }
+            return;
+        }
+        console.log('✅ Supabase client found');
+        
+        // Test 2: Check authentication
+        const { data: { user }, error: authError } = await window.supabaseClient.auth.getUser();
+        if (authError) {
+            console.error('❌ Auth error:', authError);
+            if (window.toast) {
+                window.toast.error('Kimlik doğrulama hatası: ' + authError.message);
+            } else {
+                alert('Kimlik doğrulama hatası: ' + authError.message);
+            }
+            return;
+        }
+        
+        if (!user) {
+            console.error('❌ No authenticated user');
+            if (window.toast) {
+                window.toast.error('Kullanıcı giriş yapmamış!');
+            } else {
+                alert('Kullanıcı giriş yapmamış!');
+            }
+            return;
+        }
+        
+        console.log('✅ User authenticated:', {
+            id: user.id,
+            email: user.email,
+            metadata: user.user_metadata
+        });
+        
+        // Test 3: Try to insert a test post
+        const testPost = {
+            title: 'Test Post - ' + new Date().toISOString(),
+            content: 'Bu bir test blog yazısıdır. Supabase bağlantısını test etmek için oluşturulmuştur. Test test test test test test test test test test test test test.',
+            category: 'technology',
+            tags: ['test'],
+            image_url: null,
+            author_id: user.id,
+            author_name: user.email,
+            status: 'published'
+        };
+        
+        console.log('🧪 Inserting test post:', testPost);
+        
+        const { data, error } = await window.supabaseClient
+            .from('posts')
+            .insert([testPost])
+            .select();
+        
+        if (error) {
+            console.error('❌ Insert error:', error);
+            if (window.toast) {
+                window.toast.error('Test post ekleme hatası: ' + error.message);
+            } else {
+                alert('Test post ekleme hatası: ' + error.message);
+            }
+            return;
+        }
+        
+        console.log('✅ Test post inserted successfully:', data);
+        if (window.toast) {
+            window.toast.success('Test başarılı! Post oluşturuldu: ' + testPost.title);
+        } else {
+            alert('Test başarılı! Post oluşturuldu: ' + testPost.title);
+        }
+        
+    } catch (error) {
+        console.error('❌ Test failed:', error);
+        if (window.toast) {
+            window.toast.error('Test başarısız: ' + error.message);
+        } else {
+            alert('Test başarısız: ' + error.message);
+        }
+    }
+};
+
+// Make function globally available
+window.testSupabaseConnection = testSupabaseConnection;
+
 // DOM Elements
 const createBlogForm = document.getElementById('createBlogForm');
 const titleInput = document.getElementById('blogTitle');
@@ -36,6 +130,28 @@ let currentUser = null;
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Create Blog page loaded');
     
+    // Add test button programmatically
+    const header = document.querySelector('.create-blog-header');
+    if (header) {
+        const testButton = document.createElement('button');
+        testButton.type = 'button';
+        testButton.innerHTML = '🧪 Test Supabase Connection';
+        testButton.style.cssText = `
+            background: #CD853F; 
+            color: white; 
+            padding: 8px 16px; 
+            border: none; 
+            border-radius: 4px; 
+            margin: 10px 0; 
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        `;
+        testButton.addEventListener('click', testSupabaseConnection);
+        header.appendChild(testButton);
+        console.log('✅ Test button added');
+    }
+    
     // Test toast system immediately
     setTimeout(() => {
         if (window.toast) {
@@ -66,7 +182,6 @@ const checkAuthentication = async () => {
         if (error) throw error;
         
         if (!user) {
-            // User not logged in, redirect to login
             showMessage('Blog yazısı oluşturmak için önce hesabınıza giriş yapmanız gerekiyor.', 'warning', 'Giriş Gerekli');
             setTimeout(() => {
                 window.location.href = 'login.html';
@@ -76,7 +191,6 @@ const checkAuthentication = async () => {
         
         currentUser = user;
         console.log('✅ User authenticated:', user.email);
-        // Only show welcome message once when user first loads the page and is authenticated
         if (!window.authCheckCompleted) {
             showMessage(`Hoş geldiniz! Blog yazısı oluşturmaya hazırsınız.`, 'success', 'Hazırsınız!');
             window.authCheckCompleted = true;
@@ -95,7 +209,6 @@ const checkAuthentication = async () => {
 const setupEventListeners = () => {
     console.log('🔧 Setting up event listeners...');
     
-    // Form submission
     if (createBlogForm) {
         console.log('✅ Form found, adding submit listener');
         createBlogForm.addEventListener('submit', (e) => {
@@ -106,7 +219,6 @@ const setupEventListeners = () => {
         console.error('❌ Form not found!');
     }
     
-    // Save draft button
     if (saveDraftBtn) {
         console.log('✅ Save draft button found');
         saveDraftBtn.addEventListener('click', (e) => {
@@ -117,7 +229,6 @@ const setupEventListeners = () => {
         console.error('❌ Save draft button not found!');
     }
     
-    // Image upload
     if (imageUploadArea && imageInput) {
         console.log('✅ Image upload elements found');
         imageUploadArea.addEventListener('click', () => imageInput.click());
@@ -128,7 +239,6 @@ const setupEventListeners = () => {
         removeImageBtn.addEventListener('click', removeImage);
     }
     
-    // Prevent form submission on Enter in text inputs
     if (titleInput) {
         titleInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -143,28 +253,32 @@ const setupEventListeners = () => {
 
 // Setup Character Counters
 const setupCharacterCounters = () => {
-    titleInput.addEventListener('input', updateTitleCount);
-    contentTextarea.addEventListener('input', updateContentCount);
+    if (titleInput) titleInput.addEventListener('input', updateTitleCount);
+    if (contentTextarea) contentTextarea.addEventListener('input', updateContentCount);
 };
 
 // Update title character count
 const updateTitleCount = () => {
     const count = titleInput.value.length;
-    titleCount.textContent = count;
-    
-    if (count > 90) {
-        titleCount.style.color = '#dc3545';
-    } else if (count > 80) {
-        titleCount.style.color = '#ffc107';
-    } else {
-        titleCount.style.color = '#8B6F47';
+    if (titleCount) {
+        titleCount.textContent = count;
+        
+        if (count > 90) {
+            titleCount.style.color = '#dc3545';
+        } else if (count > 80) {
+            titleCount.style.color = '#ffc107';
+        } else {
+            titleCount.style.color = '#8B6F47';
+        }
     }
 };
 
 // Update content character count
 const updateContentCount = () => {
     const count = contentTextarea.value.length;
-    contentCount.textContent = count;
+    if (contentCount) {
+        contentCount.textContent = count;
+    }
 };
 
 // Handle Image Upload
@@ -173,24 +287,19 @@ const handleImageUpload = (e) => {
     
     if (!file) return;
     
-    // Validate file type
     if (!file.type.startsWith('image/')) {
         showMessage('Lütfen geçerli bir resim dosyası seçin (PNG, JPG, GIF).', 'error', 'Geçersiz Dosya');
         return;
     }
     
-    // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
         showMessage('Resim boyutu 5MB\'dan küçük olmalıdır. Lütfen daha küçük bir resim seçin.', 'error', 'Dosya Çok Büyük');
         return;
     }
     
     uploadedImageFile = file;
-    
-    // Show success message
     showMessage(`Resim seçildi: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, 'success', 'Resim Yüklendi');
     
-    // Show preview
     const reader = new FileReader();
     reader.onload = (e) => {
         previewImg.src = e.target.result;
@@ -215,7 +324,6 @@ const validateForm = () => {
     clearErrors();
     let isValid = true;
     
-    // Title validation
     console.log('📝 Title value:', titleInput?.value);
     if (!titleInput.value.trim()) {
         console.log('❌ Title validation failed: empty');
@@ -229,7 +337,6 @@ const validateForm = () => {
         console.log('✅ Title validation passed');
     }
     
-    // Category validation
     const categorySelect = document.getElementById('blogCategory');
     console.log('📂 Category value:', categorySelect?.value);
     if (!categorySelect.value) {
@@ -240,7 +347,6 @@ const validateForm = () => {
         console.log('✅ Category validation passed');
     }
     
-    // Content validation
     console.log('📄 Content value length:', contentTextarea?.value?.length);
     if (!contentTextarea.value.trim()) {
         console.log('❌ Content validation failed: empty');
@@ -267,15 +373,13 @@ const handleSaveDraft = async (e) => {
         return;
     }
     
-    // Show loading
     saveDraftBtn.classList.add('loading');
     saveDraftBtn.disabled = true;
     
-    // Show start message
     showMessage('Taslak kaydediliyor...', 'info', 'İşlem Başladı');
     
     try {
-        const postData = await preparePostData(true); // true for draft
+        const postData = await preparePostData(true);
         const result = await saveBlogPost(postData);
         
         if (result.success) {
@@ -320,7 +424,6 @@ const handlePublishPost = async (e) => {
     
     console.log('✅ Form validation passed');
     
-    // Show loading
     const submitBtn = createBlogForm.querySelector('button[type="submit"]');
     if (submitBtn) {
         console.log('✅ Submit button found, setting loading state');
@@ -330,13 +433,12 @@ const handlePublishPost = async (e) => {
         console.error('❌ Submit button not found');
     }
     
-    // Show start message
     console.log('📢 Showing start message');
     showMessage('Blog yazısı yayınlanıyor...', 'info', 'Yayınlanıyor');
     
     try {
         console.log('📦 Preparing post data...');
-        const postData = await preparePostData(false); // false for published
+        const postData = await preparePostData(false);
         console.log('📦 Post data prepared:', postData);
         
         console.log('💾 Saving to database...');
@@ -372,11 +474,9 @@ const preparePostData = async (isDraft = false) => {
     
     const formData = new FormData(createBlogForm);
     
-    // Process tags
     const tagsInput = formData.get('tags');
     const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
     
-    // Upload image if exists
     let imageUrl = null;
     if (uploadedImageFile) {
         console.log('📸 Uploading image...');
@@ -397,7 +497,6 @@ const preparePostData = async (isDraft = false) => {
         author_id: currentUser.id,
         author_name: authorName,
         status: isDraft ? 'draft' : 'published'
-        // Remove created_at and updated_at - let database handle these with defaults
     };
     
     console.log('📦 Prepared post data:', postData);
@@ -416,7 +515,6 @@ const uploadImage = async (file) => {
         
         if (error) throw error;
         
-        // Get public URL
         const { data: urlData } = window.supabaseClient.storage
             .from('blog-images')
             .getPublicUrl(fileName);
@@ -464,7 +562,6 @@ const saveBlogPost = async (postData) => {
 
 // Show Message using Toast System
 const showMessage = (message, type = 'info', title = '') => {
-    // Use the global toast system
     if (window.toast) {
         switch (type) {
             case 'success':
@@ -480,7 +577,6 @@ const showMessage = (message, type = 'info', title = '') => {
                 window.toast.info(message, title || 'Bilgi');
         }
     } else {
-        // Fallback to console if toast system not available
         console.log(`${type.toUpperCase()}: ${message}`);
     }
 };
@@ -488,15 +584,11 @@ const showMessage = (message, type = 'info', title = '') => {
 // Show Field Error with Toast
 const showFieldError = (field, message) => {
     field.classList.add('error');
-    
-    // Show toast notification for the error
     showMessage(message, 'error', 'Form Hatası');
     
     const errorDiv = document.createElement('div');
     errorDiv.className = 'field-error';
     errorDiv.textContent = message;
-    
-    // Add visual styling to error
     errorDiv.style.cssText = `
         color: #721c24;
         font-size: 12px;
@@ -511,105 +603,4 @@ const showFieldError = (field, message) => {
 const clearErrors = () => {
     document.querySelectorAll('.field-error').forEach(error => error.remove());
     document.querySelectorAll('.error').forEach(field => field.classList.remove('error'));
-};
-
-// Auto-save draft every 2 minutes
-let autoSaveInterval;
-const startAutoSave = () => {
-    autoSaveInterval = setInterval(() => {
-        if (titleInput.value.trim() || contentTextarea.value.trim()) {
-            console.log('🔄 Auto-saving draft...');
-            handleSaveDraft(new Event('click'));
-        }
-    }, 120000); // 2 minutes
-};
-
-// Start auto-save when user starts typing
-titleInput.addEventListener('input', () => {
-    if (!autoSaveInterval) {
-        startAutoSave();
-    }
-});
-
-contentTextarea.addEventListener('input', () => {
-    if (!autoSaveInterval) {
-        startAutoSave();
-    }
-});
-
-// Clean up on page unload
-window.addEventListener('beforeunload', () => {
-    if (autoSaveInterval) {
-        clearInterval(autoSaveInterval);
-    }
-});
-
-// Test function to check Supabase connection and auth
-const testSupabaseConnection = async () => {
-    console.log('🧪 Testing Supabase connection and auth...');
-    
-    try {
-        // Test 1: Check if Supabase client exists
-        if (!window.supabaseClient) {
-            console.error('❌ Supabase client not found');
-            showMessage('Supabase bağlantısı bulunamadı!', 'error');
-            return;
-        }
-        console.log('✅ Supabase client found');
-        
-        // Test 2: Check authentication
-        const { data: { user }, error: authError } = await window.supabaseClient.auth.getUser();
-        if (authError) {
-            console.error('❌ Auth error:', authError);
-            showMessage('Kimlik doğrulama hatası: ' + authError.message, 'error');
-            return;
-        }
-        
-        if (!user) {
-            console.error('❌ No authenticated user');
-            showMessage('Kullanıcı giriş yapmamış!', 'error');
-            return;
-        }
-        
-        console.log('✅ User authenticated:', {
-            id: user.id,
-            email: user.email,
-            metadata: user.user_metadata
-        });
-        
-        // Test 3: Try to insert a test post
-        const testPost = {
-            title: 'Test Post - ' + new Date().toISOString(),
-            content: 'Bu bir test blog yazısıdır. Supabase bağlantısını test etmek için oluşturulmuştur. Test test test test test test test test test test test test test.',
-            category: 'technology',
-            tags: ['test'],
-            image_url: null,
-            author_id: user.id,
-            author_name: user.email,
-            status: 'published'
-        };
-        
-        console.log('🧪 Inserting test post:', testPost);
-        
-        const { data, error } = await window.supabaseClient
-            .from('posts')
-            .insert([testPost])
-            .select();
-        
-        if (error) {
-            console.error('❌ Insert error:', error);
-            showMessage('Test post ekleme hatası: ' + error.message, 'error');
-            return;
-        }
-        
-        console.log('✅ Test post inserted successfully:', data);
-        showMessage('Test başarılı! Post oluşturuldu: ' + testPost.title, 'success');
-        
-    } catch (error) {
-        console.error('❌ Test failed:', error);
-        showMessage('Test başarısız: ' + error.message, 'error');
-    }
-};
-
-// Add test button functionality
-window.testSupabase = testSupabaseConnection; 
+}; 
