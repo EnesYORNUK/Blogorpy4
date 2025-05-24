@@ -76,7 +76,11 @@ const checkAuthentication = async () => {
         
         currentUser = user;
         console.log('✅ User authenticated:', user.email);
-        showMessage(`Hoş geldiniz! Blog yazısı oluşturmaya hazırsınız.`, 'success', 'Hazırsınız!');
+        // Only show welcome message once when user first loads the page and is authenticated
+        if (!window.authCheckCompleted) {
+            showMessage(`Hoş geldiniz! Blog yazısı oluşturmaya hazırsınız.`, 'success', 'Hazırsınız!');
+            window.authCheckCompleted = true;
+        }
         
     } catch (error) {
         console.error('Authentication error:', error);
@@ -364,6 +368,8 @@ const handlePublishPost = async (e) => {
 
 // Prepare Post Data
 const preparePostData = async (isDraft = false) => {
+    console.log('📦 preparePostData called, isDraft:', isDraft);
+    
     const formData = new FormData(createBlogForm);
     
     // Process tags
@@ -373,21 +379,29 @@ const preparePostData = async (isDraft = false) => {
     // Upload image if exists
     let imageUrl = null;
     if (uploadedImageFile) {
+        console.log('📸 Uploading image...');
         imageUrl = await uploadImage(uploadedImageFile);
+        console.log('📸 Image uploaded:', imageUrl);
     }
     
-    return {
+    const authorName = currentUser.user_metadata?.display_name || 
+                      `${currentUser.user_metadata?.first_name || ''} ${currentUser.user_metadata?.last_name || ''}`.trim() || 
+                      currentUser.email;
+    
+    const postData = {
         title: formData.get('title').trim(),
         content: formData.get('content').trim(),
         category: formData.get('category'),
         tags: tags,
         image_url: imageUrl,
         author_id: currentUser.id,
-        author_name: currentUser.user_metadata?.display_name || `${currentUser.user_metadata?.first_name || ''} ${currentUser.user_metadata?.last_name || ''}`.trim() || currentUser.email,
-        status: isDraft ? 'draft' : 'published',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        author_name: authorName,
+        status: isDraft ? 'draft' : 'published'
+        // Remove created_at and updated_at - let database handle these with defaults
     };
+    
+    console.log('📦 Prepared post data:', postData);
+    return postData;
 };
 
 // Upload Image to Supabase Storage
@@ -528,4 +542,74 @@ window.addEventListener('beforeunload', () => {
     if (autoSaveInterval) {
         clearInterval(autoSaveInterval);
     }
-}); 
+});
+
+// Test function to check Supabase connection and auth
+const testSupabaseConnection = async () => {
+    console.log('🧪 Testing Supabase connection and auth...');
+    
+    try {
+        // Test 1: Check if Supabase client exists
+        if (!window.supabaseClient) {
+            console.error('❌ Supabase client not found');
+            showMessage('Supabase bağlantısı bulunamadı!', 'error');
+            return;
+        }
+        console.log('✅ Supabase client found');
+        
+        // Test 2: Check authentication
+        const { data: { user }, error: authError } = await window.supabaseClient.auth.getUser();
+        if (authError) {
+            console.error('❌ Auth error:', authError);
+            showMessage('Kimlik doğrulama hatası: ' + authError.message, 'error');
+            return;
+        }
+        
+        if (!user) {
+            console.error('❌ No authenticated user');
+            showMessage('Kullanıcı giriş yapmamış!', 'error');
+            return;
+        }
+        
+        console.log('✅ User authenticated:', {
+            id: user.id,
+            email: user.email,
+            metadata: user.user_metadata
+        });
+        
+        // Test 3: Try to insert a test post
+        const testPost = {
+            title: 'Test Post - ' + new Date().toISOString(),
+            content: 'Bu bir test blog yazısıdır. Supabase bağlantısını test etmek için oluşturulmuştur. Test test test test test test test test test test test test test.',
+            category: 'technology',
+            tags: ['test'],
+            image_url: null,
+            author_id: user.id,
+            author_name: user.email,
+            status: 'published'
+        };
+        
+        console.log('🧪 Inserting test post:', testPost);
+        
+        const { data, error } = await window.supabaseClient
+            .from('posts')
+            .insert([testPost])
+            .select();
+        
+        if (error) {
+            console.error('❌ Insert error:', error);
+            showMessage('Test post ekleme hatası: ' + error.message, 'error');
+            return;
+        }
+        
+        console.log('✅ Test post inserted successfully:', data);
+        showMessage('Test başarılı! Post oluşturuldu: ' + testPost.title, 'success');
+        
+    } catch (error) {
+        console.error('❌ Test failed:', error);
+        showMessage('Test başarısız: ' + error.message, 'error');
+    }
+};
+
+// Add test button functionality
+window.testSupabase = testSupabaseConnection; 
