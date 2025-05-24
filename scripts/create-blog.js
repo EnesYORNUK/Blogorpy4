@@ -319,7 +319,7 @@ const removeImage = () => {
 };
 
 // Validate Form
-const validateForm = () => {
+const validateBlogForm = () => {
     console.log('🔍 Starting form validation...');
     clearErrors();
     let isValid = true;
@@ -416,7 +416,7 @@ const handlePublishPost = async (e) => {
     }
     
     console.log('✅ User authenticated, validating form...');
-    if (!validateForm()) {
+    if (!validateBlogForm()) {
         console.log('❌ Form validation failed');
         showMessage('Lütfen tüm gerekli alanları doldurun ve hataları düzeltin.', 'warning', 'Form Eksik');
         return;
