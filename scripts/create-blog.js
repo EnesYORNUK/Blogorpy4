@@ -81,6 +81,24 @@ const testSupabaseConnection = async () => {
             alert('Test başarılı! Post oluşturuldu: ' + testPost.title);
         }
         
+        // Test 4: Test storage access
+        console.log('🧪 Testing storage access...');
+        const { data: storageTest, error: storageError } = await window.supabaseClient.storage
+            .from('blog-images')
+            .list('', { limit: 1 });
+
+        if (storageError) {
+            console.error('❌ Storage test error:', storageError);
+            if (window.toast) {
+                window.toast.warning('Storage erişim sorunu: ' + storageError.message);
+            }
+        } else {
+            console.log('✅ Storage access successful');
+            if (window.toast) {
+                window.toast.success('Storage erişimi de başarılı!');
+            }
+        }
+        
     } catch (error) {
         console.error('❌ Test failed:', error);
         if (window.toast) {
@@ -297,16 +315,378 @@ const handleImageUpload = (e) => {
         return;
     }
     
-    uploadedImageFile = file;
-    showMessage(`Resim seçildi: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, 'success', 'Resim Yüklendi');
+    // Show image cropping modal
+    showImageCropper(file);
+};
+
+// Image Cropper Variables
+let cropCanvas, cropCtx, cropImage, cropModal;
+let cropSelection = { x: 0, y: 0, width: 200, height: 200 };
+let isDragging = false;
+let isResizing = false;
+let dragStart = { x: 0, y: 0 };
+let resizeHandle = null;
+let canvasRect = null;
+
+// Show Image Cropper Modal
+const showImageCropper = (file) => {
+    cropModal = document.getElementById('cropModal');
+    cropCanvas = document.getElementById('cropCanvas');
+    cropCtx = cropCanvas.getContext('2d');
     
     const reader = new FileReader();
     reader.onload = (e) => {
-        previewImg.src = e.target.result;
-        imageUploadArea.querySelector('.upload-placeholder').style.display = 'none';
-        imagePreview.style.display = 'block';
+        cropImage = new Image();
+        cropImage.onload = () => {
+            setupCropCanvas();
+            setupCropEventListeners();
+            cropModal.style.display = 'flex';
+            cropModal.classList.add('show');
+        };
+        cropImage.src = e.target.result;
     };
     reader.readAsDataURL(file);
+};
+
+// Setup Crop Canvas
+const setupCropCanvas = () => {
+    const maxWidth = 600;
+    const maxHeight = 400;
+    
+    let { width, height } = cropImage;
+    
+    // Scale image to fit canvas
+    if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width *= ratio;
+        height *= ratio;
+    }
+    
+    cropCanvas.width = width;
+    cropCanvas.height = height;
+    cropCanvas.style.width = width + 'px';
+    cropCanvas.style.height = height + 'px';
+    
+    // Draw image
+    cropCtx.drawImage(cropImage, 0, 0, width, height);
+    
+    // Position overlay
+    const overlay = document.getElementById('cropOverlay');
+    overlay.style.width = width + 'px';
+    overlay.style.height = height + 'px';
+    
+    // Set initial crop selection (center)
+    cropSelection = {
+        x: width * 0.2,
+        y: height * 0.2,
+        width: width * 0.6,
+        height: height * 0.6
+    };
+    
+    updateCropSelection();
+};
+
+// Update Crop Selection Display
+const updateCropSelection = () => {
+    const selection = document.getElementById('cropSelection');
+    selection.style.left = cropSelection.x + 'px';
+    selection.style.top = cropSelection.y + 'px';
+    selection.style.width = cropSelection.width + 'px';
+    selection.style.height = cropSelection.height + 'px';
+};
+
+// Setup Crop Event Listeners
+const setupCropEventListeners = () => {
+    const selection = document.getElementById('cropSelection');
+    const handles = document.querySelectorAll('.crop-handle');
+    
+    // Get canvas rectangle
+    canvasRect = cropCanvas.getBoundingClientRect();
+    
+    // Selection drag - improved to work better
+    selection.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('crop-handle')) return;
+        isDragging = true;
+        
+        // Get the actual position relative to the crop container
+        const containerRect = document.querySelector('.crop-container').getBoundingClientRect();
+        const canvasRect = cropCanvas.getBoundingClientRect();
+        
+        // Calculate offset from canvas to container
+        const offsetX = canvasRect.left - containerRect.left;
+        const offsetY = canvasRect.top - containerRect.top;
+        
+        dragStart = {
+            x: e.clientX - (containerRect.left + offsetX + cropSelection.x),
+            y: e.clientY - (containerRect.top + offsetY + cropSelection.y)
+        };
+        
+        // Add visual feedback
+        selection.style.cursor = 'grabbing';
+        selection.style.transition = 'none';
+        
+        e.preventDefault();
+    });
+    
+    // Handle resize
+    handles.forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            resizeHandle = handle.className.split(' ')[1]; // get crop-handle-xx
+            dragStart = { x: e.clientX, y: e.clientY };
+            
+            // Add visual feedback
+            handle.style.transform = handle.style.transform.replace('scale(1.2)', '') + ' scale(1.3)';
+            document.body.style.cursor = getComputedStyle(handle).cursor;
+            
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+    
+    // Mouse move
+    document.addEventListener('mousemove', handleCropMouseMove);
+    
+    // Mouse up
+    document.addEventListener('mouseup', () => {
+        if (isDragging || isResizing) {
+            // Reset visual feedback
+            selection.style.cursor = 'move';
+            selection.style.transition = 'box-shadow 0.2s ease';
+            document.body.style.cursor = 'default';
+            
+            // Reset handle scales
+            handles.forEach(handle => {
+                handle.style.transform = handle.style.transform.replace(/scale\([^)]*\)/, '');
+            });
+        }
+        
+        isDragging = false;
+        isResizing = false;
+        resizeHandle = null;
+    });
+    
+    // Cancel button
+    document.getElementById('cropCancel').addEventListener('click', () => {
+        closeCropModal();
+    });
+    
+    // Apply button
+    document.getElementById('cropApply').addEventListener('click', () => {
+        applyCrop();
+    });
+    
+    // Close on overlay click
+    cropModal.addEventListener('click', (e) => {
+        if (e.target === cropModal) {
+            closeCropModal();
+        }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', handleCropKeyboard);
+};
+
+// Handle Keyboard Shortcuts for Cropping
+const handleCropKeyboard = (e) => {
+    if (!cropModal || cropModal.style.display === 'none') return;
+    
+    switch (e.key) {
+        case 'Escape':
+            closeCropModal();
+            break;
+        case 'Enter':
+            applyCrop();
+            break;
+        case 'ArrowLeft':
+            if (e.shiftKey) {
+                cropSelection.width = Math.max(80, cropSelection.width - 10);
+            } else {
+                cropSelection.x = Math.max(0, cropSelection.x - 5);
+            }
+            updateCropSelection();
+            e.preventDefault();
+            break;
+        case 'ArrowRight':
+            if (e.shiftKey) {
+                cropSelection.width = Math.min(cropCanvas.width - cropSelection.x, cropSelection.width + 10);
+            } else {
+                cropSelection.x = Math.min(cropCanvas.width - cropSelection.width, cropSelection.x + 5);
+            }
+            updateCropSelection();
+            e.preventDefault();
+            break;
+        case 'ArrowUp':
+            if (e.shiftKey) {
+                cropSelection.height = Math.max(80, cropSelection.height - 10);
+            } else {
+                cropSelection.y = Math.max(0, cropSelection.y - 5);
+            }
+            updateCropSelection();
+            e.preventDefault();
+            break;
+        case 'ArrowDown':
+            if (e.shiftKey) {
+                cropSelection.height = Math.min(cropCanvas.height - cropSelection.y, cropSelection.height + 10);
+            } else {
+                cropSelection.y = Math.min(cropCanvas.height - cropSelection.height, cropSelection.y + 5);
+            }
+            updateCropSelection();
+            e.preventDefault();
+            break;
+    }
+};
+
+// Handle Mouse Move for Cropping
+const handleCropMouseMove = (e) => {
+    if (!isDragging && !isResizing) return;
+    
+    const containerRect = document.querySelector('.crop-container').getBoundingClientRect();
+    const canvasRect = cropCanvas.getBoundingClientRect();
+    
+    // Calculate offset from canvas to container
+    const offsetX = canvasRect.left - containerRect.left;
+    const offsetY = canvasRect.top - containerRect.top;
+    
+    if (isDragging) {
+        // Move selection with smooth constraints
+        let newX = e.clientX - containerRect.left - offsetX - dragStart.x;
+        let newY = e.clientY - containerRect.top - offsetY - dragStart.y;
+        
+        // Constrain to canvas with smooth boundaries
+        newX = Math.max(0, Math.min(newX, cropCanvas.width - cropSelection.width));
+        newY = Math.max(0, Math.min(newY, cropCanvas.height - cropSelection.height));
+        
+        cropSelection.x = newX;
+        cropSelection.y = newY;
+        
+    } else if (isResizing) {
+        // Resize selection with improved logic
+        const deltaX = e.clientX - dragStart.x;
+        const deltaY = e.clientY - dragStart.y;
+        
+        let newX = cropSelection.x;
+        let newY = cropSelection.y;
+        let newWidth = cropSelection.width;
+        let newHeight = cropSelection.height;
+        
+        switch (resizeHandle) {
+            case 'crop-handle-se':
+                newWidth = Math.max(80, Math.min(cropCanvas.width - cropSelection.x, cropSelection.width + deltaX));
+                newHeight = Math.max(80, Math.min(cropCanvas.height - cropSelection.y, cropSelection.height + deltaY));
+                break;
+            case 'crop-handle-sw':
+                newWidth = Math.max(80, cropSelection.width - deltaX);
+                newHeight = Math.max(80, Math.min(cropCanvas.height - cropSelection.y, cropSelection.height + deltaY));
+                newX = Math.max(0, Math.min(cropSelection.x + deltaX, cropSelection.x + cropSelection.width - 80));
+                break;
+            case 'crop-handle-ne':
+                newWidth = Math.max(80, Math.min(cropCanvas.width - cropSelection.x, cropSelection.width + deltaX));
+                newHeight = Math.max(80, cropSelection.height - deltaY);
+                newY = Math.max(0, Math.min(cropSelection.y + deltaY, cropSelection.y + cropSelection.height - 80));
+                break;
+            case 'crop-handle-nw':
+                newWidth = Math.max(80, cropSelection.width - deltaX);
+                newHeight = Math.max(80, cropSelection.height - deltaY);
+                newX = Math.max(0, Math.min(cropSelection.x + deltaX, cropSelection.x + cropSelection.width - 80));
+                newY = Math.max(0, Math.min(cropSelection.y + deltaY, cropSelection.y + cropSelection.height - 80));
+                break;
+            case 'crop-handle-n':
+                newHeight = Math.max(80, cropSelection.height - deltaY);
+                newY = Math.max(0, Math.min(cropSelection.y + deltaY, cropSelection.y + cropSelection.height - 80));
+                break;
+            case 'crop-handle-s':
+                newHeight = Math.max(80, Math.min(cropCanvas.height - cropSelection.y, cropSelection.height + deltaY));
+                break;
+            case 'crop-handle-w':
+                newWidth = Math.max(80, cropSelection.width - deltaX);
+                newX = Math.max(0, Math.min(cropSelection.x + deltaX, cropSelection.x + cropSelection.width - 80));
+                break;
+            case 'crop-handle-e':
+                newWidth = Math.max(80, Math.min(cropCanvas.width - cropSelection.x, cropSelection.width + deltaX));
+                break;
+        }
+        
+        // Update selection
+        cropSelection.x = newX;
+        cropSelection.y = newY;
+        cropSelection.width = newWidth;
+        cropSelection.height = newHeight;
+        
+        dragStart = { x: e.clientX, y: e.clientY };
+    }
+    
+    updateCropSelection();
+};
+
+// Apply Crop
+const applyCrop = () => {
+    const croppedCanvas = document.createElement('canvas');
+    const croppedCtx = croppedCanvas.getContext('2d');
+    
+    // Calculate scale factors
+    const scaleX = cropImage.width / cropCanvas.width;
+    const scaleY = cropImage.height / cropCanvas.height;
+    
+    // Set cropped canvas size
+    const croppedWidth = cropSelection.width * scaleX;
+    const croppedHeight = cropSelection.height * scaleY;
+    
+    croppedCanvas.width = croppedWidth;
+    croppedCanvas.height = croppedHeight;
+    
+    // Draw cropped section
+    croppedCtx.drawImage(
+        cropImage,
+        cropSelection.x * scaleX,
+        cropSelection.y * scaleY,
+        croppedWidth,
+        croppedHeight,
+        0,
+        0,
+        croppedWidth,
+        croppedHeight
+    );
+    
+    // Convert to blob and create file
+    croppedCanvas.toBlob((blob) => {
+        if (blob) {
+            const croppedFile = new File(
+                [blob],
+                'cropped_image.jpg',
+                { type: 'image/jpeg', lastModified: Date.now() }
+            );
+            
+            uploadedImageFile = croppedFile;
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                imageUploadArea.querySelector('.upload-placeholder').style.display = 'none';
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(croppedFile);
+            
+            showMessage(
+                `Resim başarıyla kırpıldı! Boyut: ${Math.round(croppedWidth)}x${Math.round(croppedHeight)}px`,
+                'success',
+                'Resim Hazır! ✂️'
+            );
+            
+            closeCropModal();
+        }
+    }, 'image/jpeg', 0.9);
+};
+
+// Close Crop Modal
+const closeCropModal = () => {
+    cropModal.style.display = 'none';
+    cropModal.classList.remove('show');
+    
+    // Clean up event listeners
+    document.removeEventListener('mousemove', handleCropMouseMove);
+    document.removeEventListener('keydown', handleCropKeyboard);
 };
 
 // Remove Image
@@ -480,8 +860,18 @@ const preparePostData = async (isDraft = false) => {
     let imageUrl = null;
     if (uploadedImageFile) {
         console.log('📸 Uploading image...');
-        imageUrl = await uploadImage(uploadedImageFile);
-        console.log('📸 Image uploaded:', imageUrl);
+        try {
+            imageUrl = await uploadImage(uploadedImageFile);
+            console.log('📸 Image uploaded:', imageUrl);
+        } catch (uploadError) {
+            console.error('📸 Image upload failed, continuing without image:', uploadError);
+            // Show warning but don't stop the post creation
+            if (window.toast) {
+                window.toast.warning('Resim yüklenemedi, blog yazısı resim olmadan devam ediyor: ' + uploadError.message);
+            }
+            // Continue without image
+            imageUrl = null;
+        }
     }
     
     const authorName = currentUser.user_metadata?.display_name || 
@@ -506,24 +896,75 @@ const preparePostData = async (isDraft = false) => {
 // Upload Image to Supabase Storage
 const uploadImage = async (file) => {
     try {
-        const fileExt = file.name.split('.').pop();
+        console.log('📸 Starting image upload:', {
+            name: file.name,
+            type: file.type,
+            size: file.size
+        });
+
+        // Validate file type again
+        if (!file.type.startsWith('image/')) {
+            throw new Error('Geçersiz dosya tipi: ' + file.type);
+        }
+
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            throw new Error('Dosya çok büyük: ' + (file.size / 1024 / 1024).toFixed(2) + 'MB');
+        }
+
+        const fileExt = file.name.split('.').pop().toLowerCase();
         const fileName = `blog-images/${currentUser.id}/${Date.now()}.${fileExt}`;
         
+        console.log('📸 Uploading to path:', fileName);
+
+        // Check if bucket exists and is accessible
+        const { data: bucketData, error: bucketError } = await window.supabaseClient.storage
+            .from('blog-images')
+            .list('', { limit: 1 });
+
+        if (bucketError) {
+            console.error('❌ Bucket access error:', bucketError);
+            throw new Error('Storage bucket erişim hatası: ' + bucketError.message);
+        }
+
+        console.log('✅ Bucket accessible, uploading file...');
+
+        // Upload the file
         const { data, error } = await window.supabaseClient.storage
             .from('blog-images')
-            .upload(fileName, file);
+            .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: false
+            });
         
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Upload error:', error);
+            throw new Error('Resim yükleme hatası: ' + error.message);
+        }
+
+        console.log('✅ Upload successful:', data);
         
+        // Get public URL
         const { data: urlData } = window.supabaseClient.storage
             .from('blog-images')
             .getPublicUrl(fileName);
         
+        console.log('✅ Public URL generated:', urlData.publicUrl);
         return urlData.publicUrl;
         
     } catch (error) {
-        console.error('Image upload error:', error);
-        throw new Error('Resim yüklenirken hata oluştu');
+        console.error('❌ Image upload error details:', error);
+        
+        // Provide more specific error messages
+        if (error.message.includes('not allowed to perform this operation')) {
+            throw new Error('Resim yükleme yetkiniz yok. Lütfen giriş yapıp tekrar deneyin.');
+        } else if (error.message.includes('File size')) {
+            throw new Error('Resim boyutu çok büyük. Maksimum 5MB olmalıdır.');
+        } else if (error.message.includes('not found')) {
+            throw new Error('Resim depolama alanına erişilemiyor. Lütfen daha sonra tekrar deneyin.');
+        } else {
+            throw new Error('Resim yüklenirken hata oluştu: ' + error.message);
+        }
     }
 };
 

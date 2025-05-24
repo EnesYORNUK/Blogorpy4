@@ -137,6 +137,35 @@
         </div>
     </section>
 
+    <!-- Image Crop Modal -->
+    <div id="cropModal" class="crop-modal" style="display: none;">
+        <div class="crop-modal-content">
+            <div class="crop-header">
+                <h3>Resmi Kırp</h3>
+                <p>Kırpmak istediğiniz alanı seçin</p>
+            </div>
+            <div class="crop-container">
+                <canvas id="cropCanvas" class="crop-canvas"></canvas>
+                <div class="crop-overlay" id="cropOverlay">
+                    <div class="crop-selection" id="cropSelection">
+                        <div class="crop-handle crop-handle-nw"></div>
+                        <div class="crop-handle crop-handle-ne"></div>
+                        <div class="crop-handle crop-handle-sw"></div>
+                        <div class="crop-handle crop-handle-se"></div>
+                        <div class="crop-handle crop-handle-n"></div>
+                        <div class="crop-handle crop-handle-s"></div>
+                        <div class="crop-handle crop-handle-w"></div>
+                        <div class="crop-handle crop-handle-e"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="crop-actions">
+                <button type="button" class="btn btn-secondary" id="cropCancel">İptal</button>
+                <button type="button" class="btn btn-primary" id="cropApply">Kırp ve Uygula</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Supabase -->
     <script src="scripts/config.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2.49.8/dist/umd/supabase.js"></script>
