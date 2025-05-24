@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Browse all blog posts on Blogorpy">
+    <title>Blogs - Blogorpy</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/blogs.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Blogorpy</a>
+            <button class="nav-toggle" aria-label="toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="blogs.html" class="nav-link active">Blogs</a>
+                <a href="login.html" class="nav-link nav-cta">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <h1 class="page-title">Our Blog</h1>
+            <p class="page-subtitle">Discover stories, thinking, and expertise from writers on any topic</p>
+        </div>
+    </header>
+
+    <!-- Search and Filter Section -->
+    <section class="search-filter-section">
+        <div class="container">
+            <div class="search-filter-container">
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="Search articles..."
+                        aria-label="Search articles"
+                    >
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M19 19L13.8033 13.8033M13.8033 13.8033C15.1605 12.4461 16 10.5711 16 8.5C16 4.35786 12.6421 1 8.5 1C4.35786 1 1 4.35786 1 8.5C1 12.6421 4.35786 16 8.5 16C10.5711 16 12.4461 15.1605 13.8033 13.8033Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="filter-container">
+                    <button class="filter-btn active" data-category="all">All</button>
+                    <button class="filter-btn" data-category="design">Design</button>
+                    <button class="filter-btn" data-category="technology">Technology</button>
+                    <button class="filter-btn" data-category="business">Business</button>
+                    <button class="filter-btn" data-category="lifestyle">Lifestyle</button>
+                </div>
+            </div>
+            <div class="results-info">
+                <span id="resultsCount">Showing all articles</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Grid -->
+    <section class="blogs-section">
+        <div class="container">
+            <div class="blogs-grid" id="blogsGrid">
+                <!-- Blog posts will be dynamically loaded here -->
+            </div>
+            
+            <!-- Load More Button -->
+            <div class="load-more-container">
+                <button class="load-more-btn" id="loadMoreBtn">
+                    <span>Load More Articles</span>
+                    <div class="loading-spinner"></div>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter-section">
+        <div class="container">
+            <div class="newsletter-content">
+                <h2 class="newsletter-title">Stay Updated</h2>
+                <p class="newsletter-text">Get the latest articles delivered straight to your inbox</p>
+                <form class="newsletter-form" id="newsletterForm">
+                    <div class="newsletter-input-group">
+                        <input 
+                            type="email" 
+                            class="newsletter-input" 
+                            placeholder="Enter your email"
+                            required
+                            aria-label="Email address"
+                        >
+                        <button type="submit" class="newsletter-btn">Subscribe</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="footer-title">Blogorpy</h3>
+                    <p class="footer-text">Minimalist blogging at its finest</p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-subtitle">Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="blogs.html">Blogs</a></li>
+                        <li><a href="login.html">Login</a></li>
+                        <li><a href="signup.html">Sign Up</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-subtitle">Categories</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" data-category="design">Design</a></li>
+                        <li><a href="#" data-category="technology">Technology</a></li>
+                        <li><a href="#" data-category="business">Business</a></li>
+                        <li><a href="#" data-category="lifestyle">Lifestyle</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Blogorpy. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="scripts/main.js"></script>
+    <script src="scripts/blogs.js"></script>
+</body>
+</html> 

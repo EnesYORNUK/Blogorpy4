@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A minimalist blog exploring ideas, stories, and insights">
+    <title>Blogorpy - Minimalist Blog</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Blogorpy</a>
+            <button class="nav-toggle" aria-label="toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link active">Home</a>
+                <a href="blogs.html" class="nav-link">Blogs</a>
+                <a href="login.html" class="nav-link nav-cta">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Welcome to Blogorpy</h1>
+            <p class="hero-subtitle">A minimalist space for thoughtful writing and meaningful stories</p>
+            <a href="blogs.html" class="hero-button">Explore Articles</a>
+        </div>
+        <div class="hero-decoration"></div>
+    </header>
+
+    <!-- Featured Posts Section -->
+    <section class="featured-section">
+        <div class="container">
+            <h2 class="section-title">Featured Stories</h2>
+            <div class="featured-grid" id="featuredPosts">
+                <!-- Featured posts will be dynamically loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-section">
+        <div class="container">
+            <div class="about-content">
+                <h2 class="about-title">About Blogorpy</h2>
+                <p class="about-text">
+                    We believe in the power of words to inspire, educate, and connect. 
+                    Our platform celebrates minimalist design and thoughtful content, 
+                    creating a distraction-free space for readers and writers alike.
+                </p>
+                <div class="about-stats">
+                    <div class="stat">
+                        <span class="stat-number">150+</span>
+                        <span class="stat-label">Articles</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">50K</span>
+                        <span class="stat-label">Readers</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">25</span>
+                        <span class="stat-label">Authors</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="footer-title">Blogorpy</h3>
+                    <p class="footer-text">Minimalist blogging at its finest</p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-subtitle">Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="blogs.html">Blogs</a></li>
+                        <li><a href="login.html">Login</a></li>
+                        <li><a href="signup.html">Sign Up</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-subtitle">Connect</h4>
+                    <p class="footer-text">Stay updated with our latest posts</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Blogorpy. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="scripts/main.js"></script>
+    <script src="scripts/home.js"></script>
+</body>
+</html> 
