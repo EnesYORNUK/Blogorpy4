@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Read blog post on Blogorpy">
+    <title>Blog Post - Blogorpy</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/blog-detail.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="blog-detail-page">
+    <!-- Navigation -->
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Blogorpy</a>
+            <button class="nav-toggle" aria-label="toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu" id="navMenu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="blogs.html" class="nav-link" style="color: #6B4423; font-weight: 600;">Blogs</a>
+                <a href="create-blog.html" class="nav-link" id="createBlogLink" style="display: none;">Create Blog</a>
+                <a href="login.html" class="nav-link" id="loginLink">Login</a>
+                <a href="signup.html" class="nav-link nav-cta" id="signupLink">Sign Up</a>
+                <button class="nav-link logout-btn" id="logoutBtn" style="display: none;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Blog yazısı yükleniyor...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="error-container" style="display: none;">
+        <div class="error-content">
+            <h2>Blog Bulunamadı</h2>
+            <p>Aradığınız blog yazısı bulunamadı veya silindi.</p>
+            <a href="blogs.html" class="btn btn-primary">Blogları Gör</a>
+        </div>
+    </div>
+
+    <!-- Blog Detail Content -->
+    <article id="blogContent" class="blog-detail-container" style="display: none;">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <a href="index.html">Ana Sayfa</a>
+            <span class="breadcrumb-separator">></span>
+            <a href="blogs.html">Bloglar</a>
+            <span class="breadcrumb-separator">></span>
+            <span id="breadcrumbTitle">Blog Yazısı</span>
+        </nav>
+
+        <!-- Blog Header -->
+        <header class="blog-header">
+            <div class="blog-meta">
+                <span class="blog-category" id="blogCategory">Category</span>
+                <span class="blog-date" id="blogDate">Date</span>
+            </div>
+            <h1 class="blog-title" id="blogTitle">Blog Title</h1>
+            <div class="blog-author-info">
+                <div class="author-avatar">
+                    <span id="authorInitials">A</span>
+                </div>
+                <div class="author-details">
+                    <span class="author-name" id="authorName">Author Name</span>
+                    <span class="read-time" id="readTime">5 min read</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Featured Image -->
+        <div class="blog-featured-image" id="featuredImageContainer" style="display: none;">
+            <img id="featuredImage" src="" alt="Blog featured image">
+        </div>
+
+        <!-- Blog Content -->
+        <div class="blog-content-wrapper">
+            <div class="blog-content" id="blogContentText">
+                <!-- Blog content will be loaded here -->
+            </div>
+
+            <!-- Tags -->
+            <div class="blog-tags" id="blogTags">
+                <!-- Tags will be loaded here -->
+            </div>
+
+            <!-- Share Buttons -->
+            <div class="blog-share">
+                <h4>Bu yazıyı paylaş:</h4>
+                <div class="share-buttons">
+                    <button class="share-btn share-twitter" onclick="shareOnTwitter()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                        </svg>
+                        Twitter
+                    </button>
+                    <button class="share-btn share-linkedin" onclick="shareOnLinkedIn()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                        </svg>
+                        LinkedIn
+                    </button>
+                    <button class="share-btn share-copy" onclick="copyToClipboard()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Kopyala
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Posts -->
+        <section class="related-posts" id="relatedPosts">
+            <h3>İlgili Yazılar</h3>
+            <div class="related-posts-grid" id="relatedPostsGrid">
+                <!-- Related posts will be loaded here -->
+            </div>
+        </section>
+    </article>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop" class="back-to-top" onclick="scrollToTop()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="18,15 12,9 6,15"></polyline>
+        </svg>
+    </button>
+
+    <!-- Crop Modal (for future use) -->
+    <div id="cropModal" class="crop-modal" style="display: none;">
+        <div class="crop-modal-content">
+            <div class="crop-header">
+                <h3>Resmi Kırp</h3>
+                <p>Resmi istediğiniz şekilde kırpın</p>
+            </div>
+            <div class="crop-container">
+                <canvas id="cropCanvas"></canvas>
+                <div id="cropOverlay" class="crop-overlay">
+                    <div id="cropSelection" class="crop-selection">
+                        <div class="crop-handle crop-handle-nw"></div>
+                        <div class="crop-handle crop-handle-ne"></div>
+                        <div class="crop-handle crop-handle-sw"></div>
+                        <div class="crop-handle crop-handle-se"></div>
+                        <div class="crop-handle crop-handle-n"></div>
+                        <div class="crop-handle crop-handle-s"></div>
+                        <div class="crop-handle crop-handle-w"></div>
+                        <div class="crop-handle crop-handle-e"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="crop-actions">
+                <button type="button" class="btn btn-secondary" id="cropCancel">İptal</button>
+                <button type="button" class="btn btn-primary" id="cropApply">Uygula</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase -->
+    <script src="scripts/config.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2.49.8/dist/umd/supabase.js"></script>
+    <script src="scripts/supabase.js"></script>
+    
+    <!-- Toast Notifications -->
+    <script src="scripts/toast.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="scripts/main.js"></script>
+    <script src="scripts/blog-detail.js"></script>
+</body>
+</html> 

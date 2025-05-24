@@ -180,6 +180,8 @@ const loadBlogPosts = async () => {
             .eq('status', 'published')
             .order('created_at', { ascending: false });
 
+        console.log('📡 Supabase response:', { posts, error });
+
         if (error) {
             console.error('Error loading posts:', error);
             // Fall back to mock data
@@ -196,23 +198,30 @@ const loadBlogPosts = async () => {
             allBlogPosts.splice(0, allBlogPosts.length);
             
             posts.forEach(post => {
+                console.log('📝 Processing post:', { id: post.id, title: post.title });
                 allBlogPosts.push({
-                    id: post.id,
+                    id: post.id, // Use the real database ID
                     title: post.title,
-                    excerpt: post.content.length > 150 ? post.content.substring(0, 150) + '...' : post.content,
+                    excerpt: post.content && post.content.length > 150 ? 
+                            post.content.substring(0, 150) + '...' : 
+                            (post.content || 'İçerik mevcut değil...'),
                     category: post.category,
-                    author: post.author_name,
+                    author: post.author_name || 'Bilinmeyen Yazar',
                     date: new Date(post.created_at).toLocaleDateString('tr-TR', { 
                         year: 'numeric', 
                         month: 'short', 
                         day: 'numeric' 
                     }),
-                    readTime: Math.max(1, Math.ceil(post.content.length / 200)) + ' dk okuma',
+                    readTime: post.content ? 
+                             Math.max(1, Math.ceil(post.content.split(' ').length / 200)) + ' dk okuma' :
+                             '1 dk okuma',
                     image: post.image_url || `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=600&fit=crop`
                 });
             });
             
             console.log(`✅ Loaded ${posts.length} blog posts from Supabase`);
+            console.log('📋 Processed blog posts:', allBlogPosts.map(p => ({ id: p.id, title: p.title })));
+            
             if (window.toast) {
                 window.toast.success(`${posts.length} blog yazısı başarıyla yüklendi!`, 'Yükleme Tamamlandı');
             }
@@ -285,6 +294,7 @@ const renderBlogPosts = () => {
 const createBlogCard = (post) => {
     const card = document.createElement('article');
     card.className = 'blog-card';
+    card.style.cursor = 'pointer';
     card.innerHTML = `
         <img 
             class="blog-card-image" 
@@ -300,12 +310,25 @@ const createBlogCard = (post) => {
                 <span>${post.author}</span>
                 <span>${post.readTime}</span>
             </div>
+            <div class="blog-card-action">
+                <span class="read-more-text">Devamını Oku →</span>
+            </div>
         </div>
     `;
     
+    // Add click handler to navigate to blog detail page
     card.addEventListener('click', () => {
-        // In a real app, this would navigate to the blog post
-        console.log(`Navigating to post ${post.id}`);
+        console.log(`Navigating to blog detail for post ${post.id}`);
+        window.location.href = `blog-detail.html?id=${post.id}`;
+    });
+    
+    // Add hover effects
+    card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-5px)';
+    });
+    
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0)';
     });
     
     return card;

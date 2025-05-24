@@ -165,6 +165,36 @@
     flex: 1;
 }
 
+/* Blog Card Action */
+.blog-card-action {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.read-more-text {
+    color: var(--color-primary);
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.blog-card:hover .read-more-text {
+    color: var(--color-primary-dark);
+    transform: translateX(4px);
+}
+
+.blog-card {
+    transition: all var(--transition-standard);
+}
+
+.blog-card:hover {
+    box-shadow: 0 8px 25px rgba(107, 68, 35, 0.15);
+}
+
 /* Load More Button */
 .load-more-container {
     text-align: center;
