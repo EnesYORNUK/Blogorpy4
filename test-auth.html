@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Auth Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        #logs { background: #f5f5f5; padding: 10px; height: 200px; overflow-y: scroll; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Supabase Authentication Test</h1>
+    
+    <div class="test-section">
+        <h3>Environment Info</h3>
+        <div id="envInfo"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Supabase Connection Test</h3>
+        <button onclick="testSupabaseConnection()">Test Connection</button>
+        <div id="connectionResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Quick Signup Test</h3>
+        <input type="email" id="testEmail" placeholder="test@example.com" value="test@example.com">
+        <input type="password" id="testPassword" placeholder="Test123!" value="Test123!">
+        <br>
+        <button onclick="testSignup()">Test Signup</button>
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="testLogout()">Test Logout</button>
+        <div id="authResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Console Logs</h3>
+        <button onclick="clearLogs()">Clear Logs</button>
+        <div id="logs"></div>
+    </div>
+
+    <!-- Supabase CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2.49.8/dist/umd/supabase.js"></script>
+    
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://mpolescjssadjshuygwj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wb2xlc2Nqc3NhZGpzaHV5Z3dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwODg2MTcsImV4cCI6MjA2MzY2NDYxN30.k1gRYfxHvOTYe8SUl08vLkqn4jpOeC0r5qfR68s2vtA';
+        
+        let supabase;
+        
+        // Logging function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const logElement = document.getElementById('logs');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        // Initialize
+        function init() {
+            // Environment info
+            const envInfo = {
+                hostname: window.location.hostname,
+                protocol: window.location.protocol,
+                isNetlify: window.location.hostname.includes('netlify.app'),
+                isLocalhost: window.location.hostname === 'localhost',
+                userAgent: navigator.userAgent.substring(0, 100) + '...'
+            };
+            
+            document.getElementById('envInfo').innerHTML = `
+                <pre>${JSON.stringify(envInfo, null, 2)}</pre>
+            `;
+            
+            log('🚀 Test page initialized');
+            log(`🌍 Environment: ${envInfo.isNetlify ? 'Netlify' : envInfo.isLocalhost ? 'Localhost' : 'Other'}`);
+            
+            // Initialize Supabase
+            if (window.supabase) {
+                try {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    log('✅ Supabase client created successfully', 'success');
+                } catch (error) {
+                    log(`❌ Supabase client creation failed: ${error.message}`, 'error');
+                }
+            } else {
+                log('❌ Supabase library not loaded', 'error');
+            }
+        }
+
+        function testSupabaseConnection() {
+            log('🔄 Testing Supabase connection...');
+            
+            if (!supabase) {
+                log('❌ Supabase client not available', 'error');
+                document.getElementById('connectionResult').innerHTML = '<div class="error">Supabase client not available</div>';
+                return;
+            }
+            
+            supabase.auth.getSession()
+                .then(({ data, error }) => {
+                    if (error) {
+                        log(`❌ Connection test failed: ${error.message}`, 'error');
+                        document.getElementById('connectionResult').innerHTML = `<div class="error">Connection failed: ${error.message}</div>`;
+                    } else {
+                        log('✅ Supabase connection successful', 'success');
+                        log(`📊 Session data: ${JSON.stringify(data, null, 2)}`);
+                        document.getElementById('connectionResult').innerHTML = '<div class="success">✅ Connection successful</div>';
+                    }
+                })
+                .catch(err => {
+                    log(`❌ Connection test error: ${err.message}`, 'error');
+                    document.getElementById('connectionResult').innerHTML = `<div class="error">Connection error: ${err.message}</div>';
+                });
+        }
+
+        function testSignup() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            log(`🔄 Testing signup for: ${email}`);
+            
+            if (!supabase) {
+                log('❌ Supabase client not available', 'error');
+                return;
+            }
+            
+            supabase.auth.signUp({
+                email: email,
+                password: password
+            })
+            .then(({ data, error }) => {
+                if (error) {
+                    log(`❌ Signup failed: ${error.message}`, 'error');
+                    document.getElementById('authResult').innerHTML = `<div class="error">Signup failed: ${error.message}</div>`;
+                } else {
+                    log('✅ Signup successful', 'success');
+                    log(`📊 User data: ${JSON.stringify(data.user, null, 2)}`);
+                    document.getElementById('authResult').innerHTML = '<div class="success">✅ Signup successful! Check console for details.</div>';
+                }
+            })
+            .catch(err => {
+                log(`❌ Signup error: ${err.message}`, 'error');
+                document.getElementById('authResult').innerHTML = `<div class="error">Signup error: ${err.message}</div>`;
+            });
+        }
+
+        function testLogin() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            log(`🔄 Testing login for: ${email}`);
+            
+            if (!supabase) {
+                log('❌ Supabase client not available', 'error');
+                return;
+            }
+            
+            supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            })
+            .then(({ data, error }) => {
+                if (error) {
+                    log(`❌ Login failed: ${error.message}`, 'error');
+                    document.getElementById('authResult').innerHTML = `<div class="error">Login failed: ${error.message}</div>`;
+                } else {
+                    log('✅ Login successful', 'success');
+                    log(`📊 User data: ${JSON.stringify(data.user, null, 2)}`);
+                    document.getElementById('authResult').innerHTML = '<div class="success">✅ Login successful!</div>';
+                }
+            })
+            .catch(err => {
+                log(`❌ Login error: ${err.message}`, 'error');
+                document.getElementById('authResult').innerHTML = `<div class="error">Login error: ${err.message}</div>`;
+            });
+        }
+
+        function testLogout() {
+            log('🔄 Testing logout...');
+            
+            if (!supabase) {
+                log('❌ Supabase client not available', 'error');
+                return;
+            }
+            
+            supabase.auth.signOut()
+                .then(({ error }) => {
+                    if (error) {
+                        log(`❌ Logout failed: ${error.message}`, 'error');
+                    } else {
+                        log('✅ Logout successful', 'success');
+                        document.getElementById('authResult').innerHTML = '<div class="success">✅ Logout successful!</div>';
+                    }
+                })
+                .catch(err => {
+                    log(`❌ Logout error: ${err.message}`, 'error');
+                });
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+        
+        // Also try to initialize immediately if DOM is already ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html> 
