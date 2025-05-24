@@ -111,14 +111,36 @@
                     <!-- Tags -->
                     <div class="form-group">
                         <label for="blogTags" class="form-label">Tags (Optional)</label>
-                        <input 
-                            type="text" 
-                            id="blogTags" 
-                            name="tags" 
-                            class="form-input" 
-                            placeholder="Enter tags separated by commas (e.g., programming, web development, tutorial)"
-                        >
-                        <div class="form-hint">Use tags to help people find your content</div>
+                        <div class="tags-input-container">
+                            <div class="tags-display" id="tagsDisplay">
+                                <!-- Tag chips will appear here -->
+                            </div>
+                            <input 
+                                type="text" 
+                                id="tagInput" 
+                                class="tag-input" 
+                                placeholder="Type a tag and press Enter"
+                                maxlength="30"
+                            >
+                            <input type="hidden" id="blogTags" name="tags">
+                        </div>
+                        <div class="tags-suggestions" id="tagsSuggestions">
+                            <!-- Popular tag suggestions -->
+                            <div class="suggestions-title">Popular tags:</div>
+                            <div class="suggestion-chips">
+                                <span class="suggestion-chip" data-tag="web-development">web-development</span>
+                                <span class="suggestion-chip" data-tag="javascript">javascript</span>
+                                <span class="suggestion-chip" data-tag="react">react</span>
+                                <span class="suggestion-chip" data-tag="nodejs">nodejs</span>
+                                <span class="suggestion-chip" data-tag="tutorial">tutorial</span>
+                                <span class="suggestion-chip" data-tag="beginner">beginner</span>
+                                <span class="suggestion-chip" data-tag="programming">programming</span>
+                                <span class="suggestion-chip" data-tag="design">design</span>
+                                <span class="suggestion-chip" data-tag="tips">tips</span>
+                                <span class="suggestion-chip" data-tag="guide">guide</span>
+                            </div>
+                        </div>
+                        <div class="form-hint">Add up to 5 tags to help people find your content. Press Enter or click suggestions to add tags.</div>
                     </div>
 
                     <!-- Action Buttons -->

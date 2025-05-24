@@ -125,6 +125,12 @@ const saveDraftBtn = document.getElementById('saveDraftBtn');
 const titleCount = document.getElementById('titleCount');
 const contentCount = document.getElementById('contentCount');
 
+// Tag System Elements
+const tagInput = document.getElementById('tagInput');
+const tagsDisplay = document.getElementById('tagsDisplay');
+const blogTagsHidden = document.getElementById('blogTags');
+const tagsSuggestions = document.getElementById('tagsSuggestions');
+
 // Debug DOM Elements
 console.log('🔍 DOM Elements Check:', {
     createBlogForm: !!createBlogForm,
@@ -143,6 +149,11 @@ console.log('🔍 DOM Elements Check:', {
 // State
 let uploadedImageFile = null;
 let currentUser = null;
+
+// Tag System State
+let selectedTags = [];
+const MAX_TAGS = 5;
+const MAX_TAG_LENGTH = 30;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -265,6 +276,9 @@ const setupEventListeners = () => {
             }
         });
     }
+    
+    // Tag System Event Listeners
+    setupTagSystemListeners();
     
     console.log('✅ Event listeners setup complete');
 };
@@ -854,8 +868,8 @@ const preparePostData = async (isDraft = false) => {
     
     const formData = new FormData(createBlogForm);
     
-    const tagsInput = formData.get('tags');
-    const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+    // Use new tag system
+    const tags = getSelectedTags();
     
     let imageUrl = null;
     if (uploadedImageFile) {
@@ -1044,4 +1058,239 @@ const showFieldError = (field, message) => {
 const clearErrors = () => {
     document.querySelectorAll('.field-error').forEach(error => error.remove());
     document.querySelectorAll('.error').forEach(field => field.classList.remove('error'));
-}; 
+};
+
+// Tag System Event Listeners
+const setupTagSystemListeners = () => {
+    console.log('🏷️ Setting up tag system listeners...');
+    
+    if (!tagInput || !tagsDisplay || !tagsSuggestions) {
+        console.error('❌ Tag system elements not found');
+        return;
+    }
+    
+    // Tag input event listeners
+    tagInput.addEventListener('keydown', handleTagInput);
+    tagInput.addEventListener('input', handleTagInputChange);
+    
+    // Suggestion chips click handlers
+    document.querySelectorAll('.suggestion-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const tag = chip.dataset.tag;
+            if (tag && !chip.classList.contains('used')) {
+                addTag(tag);
+            }
+        });
+    });
+    
+    // Click on container to focus input
+    const tagsContainer = document.querySelector('.tags-input-container');
+    if (tagsContainer) {
+        tagsContainer.addEventListener('click', (e) => {
+            if (e.target === tagsContainer || e.target === tagsDisplay) {
+                tagInput.focus();
+            }
+        });
+    }
+    
+    console.log('✅ Tag system listeners setup complete');
+};
+
+// Handle tag input keydown events
+const handleTagInput = (e) => {
+    const value = tagInput.value.trim();
+    
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        if (value) {
+            addTag(value);
+        }
+    } else if (e.key === 'Backspace' && !value && selectedTags.length > 0) {
+        // Remove last tag when backspace on empty input
+        removeTag(selectedTags[selectedTags.length - 1]);
+    } else if (e.key === ',' || e.key === ';') {
+        e.preventDefault();
+        if (value) {
+            addTag(value);
+        }
+    }
+};
+
+// Handle tag input change for validation
+const handleTagInputChange = (e) => {
+    const value = e.target.value;
+    
+    // Clear error state
+    tagInput.classList.remove('error');
+    const errorMsg = document.querySelector('.tag-error-message');
+    if (errorMsg) errorMsg.remove();
+    
+    // Limit input length
+    if (value.length > MAX_TAG_LENGTH) {
+        e.target.value = value.substring(0, MAX_TAG_LENGTH);
+        showTagError('Tag maximum 30 karakter olabilir');
+    }
+    
+    // Prevent certain characters
+    const invalidChars = /[<>\/\\|"'`]/;
+    if (invalidChars.test(value)) {
+        e.target.value = value.replace(invalidChars, '');
+        showTagError('Geçersiz karakterler kullanılamaz');
+    }
+};
+
+// Add a new tag
+const addTag = (tagText) => {
+    const tag = tagText.toLowerCase().trim().replace(/\s+/g, '-');
+    
+    // Validation
+    if (!tag) return;
+    
+    if (selectedTags.length >= MAX_TAGS) {
+        showTagError(`Maksimum ${MAX_TAGS} tag ekleyebilirsiniz`);
+        return;
+    }
+    
+    if (selectedTags.includes(tag)) {
+        showTagError('Bu tag zaten eklenmiş');
+        return;
+    }
+    
+    if (tag.length > MAX_TAG_LENGTH) {
+        showTagError('Tag çok uzun');
+        return;
+    }
+    
+    if (tag.length < 2) {
+        showTagError('Tag en az 2 karakter olmalı');
+        return;
+    }
+    
+    // Add tag
+    selectedTags.push(tag);
+    tagInput.value = '';
+    
+    // Update UI
+    renderTags();
+    updateHiddenInput();
+    updateSuggestions();
+    updateTagCount();
+    
+    // Success feedback
+    if (window.toast) {
+        window.toast.success(`"${tag}" tag'i eklendi`, 'Tag Eklendi');
+    }
+    
+    console.log('🏷️ Tag added:', tag);
+};
+
+// Remove a tag
+const removeTag = (tagToRemove) => {
+    const index = selectedTags.indexOf(tagToRemove);
+    if (index > -1) {
+        selectedTags.splice(index, 1);
+        
+        // Update UI
+        renderTags();
+        updateHiddenInput();
+        updateSuggestions();
+        updateTagCount();
+        
+        // Focus input
+        tagInput.focus();
+        
+        console.log('🏷️ Tag removed:', tagToRemove);
+    }
+};
+
+// Render tags in the display area
+const renderTags = () => {
+    tagsDisplay.innerHTML = selectedTags.map(tag => `
+        <span class="tag-chip">
+            ${tag}
+            <button type="button" class="tag-chip-remove" onclick="removeTag('${tag}')" aria-label="Remove ${tag}">
+                ×
+            </button>
+        </span>
+    `).join('');
+};
+
+// Update hidden input for form submission
+const updateHiddenInput = () => {
+    if (blogTagsHidden) {
+        blogTagsHidden.value = selectedTags.join(',');
+    }
+};
+
+// Update suggestion chips status
+const updateSuggestions = () => {
+    document.querySelectorAll('.suggestion-chip').forEach(chip => {
+        const tag = chip.dataset.tag;
+        if (selectedTags.includes(tag)) {
+            chip.classList.add('used');
+        } else {
+            chip.classList.remove('used');
+        }
+    });
+};
+
+// Update tag count display
+const updateTagCount = () => {
+    let countElement = document.querySelector('.tags-count');
+    
+    if (!countElement) {
+        countElement = document.createElement('div');
+        countElement.className = 'tags-count';
+        tagsSuggestions.parentNode.insertBefore(countElement, tagsSuggestions.nextSibling);
+    }
+    
+    countElement.textContent = `${selectedTags.length}/${MAX_TAGS} tags`;
+    
+    if (selectedTags.length >= MAX_TAGS) {
+        countElement.classList.add('max-reached');
+        tagInput.placeholder = 'Maximum tag sayısına ulaşıldı';
+        tagInput.disabled = true;
+    } else {
+        countElement.classList.remove('max-reached');
+        tagInput.placeholder = 'Type a tag and press Enter';
+        tagInput.disabled = false;
+    }
+};
+
+// Show tag-specific error
+const showTagError = (message) => {
+    // Remove existing error
+    const existingError = document.querySelector('.tag-error-message');
+    if (existingError) existingError.remove();
+    
+    // Add error class to input
+    tagInput.classList.add('error');
+    
+    // Create error message
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'tag-error-message';
+    errorDiv.textContent = message;
+    
+    // Insert after tags container
+    const tagsContainer = document.querySelector('.tags-input-container');
+    tagsContainer.parentNode.insertBefore(errorDiv, tagsContainer.nextSibling);
+    
+    // Remove error after 3 seconds
+    setTimeout(() => {
+        errorDiv.remove();
+        tagInput.classList.remove('error');
+    }, 3000);
+    
+    // Show toast
+    if (window.toast) {
+        window.toast.error(message, 'Tag Hatası');
+    }
+};
+
+// Get tags for form submission (update preparePostData to use this)
+const getSelectedTags = () => {
+    return selectedTags;
+};
+
+// Make removeTag globally accessible for onclick handlers
+window.removeTag = removeTag; 
