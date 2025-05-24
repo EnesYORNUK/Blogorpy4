@@ -2,14 +2,6 @@
 const SUPABASE_URL = 'https://mpolescjssadjshuygwj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wb2xlc2Nqc3NhZGpzaHV5Z3dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwODg2MTcsImV4cCI6MjA2MzY2NDYxN30.k1gRYfxHvOTYe8SUl08vLkqn4jpOeC0r5qfR68s2vtA';
 
-// Debug information for Netlify
-console.log('🌍 Environment:', {
-    hostname: window.location.hostname,
-    protocol: window.location.protocol,
-    isNetlify: window.location.hostname.includes('netlify.app'),
-    userAgent: navigator.userAgent
-});
-
 // Wait for Supabase to load and create client
 let supabase;
 let isSupabaseReady = false;
@@ -19,11 +11,6 @@ const MAX_INIT_ATTEMPTS = 5;
 const initializeSupabase = () => {
     initializationAttempts++;
     console.log(`🔄 Supabase initialization attempt ${initializationAttempts}/${MAX_INIT_ATTEMPTS}`);
-    
-    if (typeof window === 'undefined') {
-        console.error('❌ Window object not available');
-        return false;
-    }
     
     if (!window.supabase) {
         console.log('⏳ Supabase library not loaded yet, waiting...');
@@ -35,7 +22,6 @@ const initializeSupabase = () => {
         window.supabaseClient = supabase;
         isSupabaseReady = true;
         console.log('✅ Supabase client initialized successfully');
-        console.log('📡 Supabase URL:', SUPABASE_URL);
         return true;
     } catch (error) {
         console.error('❌ Error creating Supabase client:', error);
