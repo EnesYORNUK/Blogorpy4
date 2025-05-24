@@ -167,6 +167,7 @@ const loadBlogPosts = async () => {
             return;
         }
 
+        console.log('🔄 Loading blog posts from Supabase...');
         const { data: posts, error } = await window.supabaseClient
             .from('posts')
             .select('*')
@@ -176,6 +177,7 @@ const loadBlogPosts = async () => {
         if (error) {
             console.error('Error loading posts:', error);
             // Fall back to mock data
+            console.log('📝 Using mock data as fallback');
             renderBlogPosts();
             return;
         }
@@ -188,20 +190,22 @@ const loadBlogPosts = async () => {
                 allBlogPosts.push({
                     id: post.id,
                     title: post.title,
-                    excerpt: post.content.substring(0, 150) + '...',
+                    excerpt: post.content.length > 150 ? post.content.substring(0, 150) + '...' : post.content,
                     category: post.category,
                     author: post.author_name,
-                    date: new Date(post.created_at).toLocaleDateString('en-US', { 
+                    date: new Date(post.created_at).toLocaleDateString('tr-TR', { 
                         year: 'numeric', 
                         month: 'short', 
                         day: 'numeric' 
                     }),
-                    readTime: Math.ceil(post.content.length / 200) + ' min read',
-                    image: post.image_url || `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000000)}?w=800&h=600&fit=crop`
+                    readTime: Math.max(1, Math.ceil(post.content.length / 200)) + ' dk okuma',
+                    image: post.image_url || `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=600&fit=crop`
                 });
             });
             
             console.log(`✅ Loaded ${posts.length} blog posts from Supabase`);
+        } else {
+            console.log('📝 No published posts found, using mock data');
         }
         
         renderBlogPosts();
@@ -209,6 +213,7 @@ const loadBlogPosts = async () => {
     } catch (error) {
         console.error('Error loading blog posts:', error);
         // Fall back to mock data
+        console.log('📝 Using mock data due to error');
         renderBlogPosts();
     }
 };

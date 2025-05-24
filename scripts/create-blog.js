@@ -41,7 +41,7 @@ const checkAuthentication = async () => {
         
         if (!user) {
             // User not logged in, redirect to login
-            showMessage('Please login to create a blog post.', 'error');
+            showMessage('Blog yazısı oluşturmak için lütfen giriş yapın.', 'error');
             setTimeout(() => {
                 window.location.href = 'login.html';
             }, 2000);
@@ -53,7 +53,7 @@ const checkAuthentication = async () => {
         
     } catch (error) {
         console.error('Authentication error:', error);
-        showMessage('Authentication failed. Please try again.', 'error');
+        showMessage('Kimlik doğrulama başarısız. Lütfen tekrar deneyin.', 'error');
         setTimeout(() => {
             window.location.href = 'login.html';
         }, 2000);
@@ -116,13 +116,13 @@ const handleImageUpload = (e) => {
     
     // Validate file type
     if (!file.type.startsWith('image/')) {
-        showMessage('Please select a valid image file.', 'error');
+        showMessage('Lütfen geçerli bir resim dosyası seçin.', 'error');
         return;
     }
     
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-        showMessage('Image size must be less than 5MB.', 'error');
+        showMessage('Resim boyutu 5MB\'dan az olmalıdır.', 'error');
         return;
     }
     
@@ -154,26 +154,26 @@ const validateForm = () => {
     
     // Title validation
     if (!titleInput.value.trim()) {
-        showFieldError(titleInput, 'Title is required');
+        showFieldError(titleInput, 'Başlık gereklidir');
         isValid = false;
     } else if (titleInput.value.length > 100) {
-        showFieldError(titleInput, 'Title must be 100 characters or less');
+        showFieldError(titleInput, 'Başlık 100 karakterden az olmalıdır');
         isValid = false;
     }
     
     // Category validation
     const categorySelect = document.getElementById('blogCategory');
     if (!categorySelect.value) {
-        showFieldError(categorySelect, 'Please select a category');
+        showFieldError(categorySelect, 'Lütfen bir kategori seçin');
         isValid = false;
     }
     
     // Content validation
     if (!contentTextarea.value.trim()) {
-        showFieldError(contentTextarea, 'Content is required');
+        showFieldError(contentTextarea, 'İçerik gereklidir');
         isValid = false;
     } else if (contentTextarea.value.length < 50) {
-        showFieldError(contentTextarea, 'Content must be at least 50 characters');
+        showFieldError(contentTextarea, 'İçerik en az 50 karakter olmalıdır');
         isValid = false;
     }
     
@@ -185,7 +185,7 @@ const handleSaveDraft = async (e) => {
     e.preventDefault();
     
     if (!currentUser) {
-        showMessage('Please login to save drafts.', 'error');
+        showMessage('Taslak kaydetmek için lütfen giriş yapın.', 'error');
         return;
     }
     
@@ -198,14 +198,14 @@ const handleSaveDraft = async (e) => {
         const result = await saveBlogPost(postData);
         
         if (result.success) {
-            showMessage('Draft saved successfully!', 'success');
+            showMessage('Taslak başarıyla kaydedildi! 📝', 'success');
         } else {
             throw new Error(result.error);
         }
         
     } catch (error) {
         console.error('Error saving draft:', error);
-        showMessage('Failed to save draft: ' + error.message, 'error');
+        showMessage('Taslak kaydedilirken hata oluştu: ' + error.message, 'error');
     } finally {
         saveDraftBtn.classList.remove('loading');
         saveDraftBtn.disabled = false;
@@ -217,7 +217,7 @@ const handlePublishPost = async (e) => {
     e.preventDefault();
     
     if (!currentUser) {
-        showMessage('Please login to publish posts.', 'error');
+        showMessage('Blog yazısı yayınlamak için lütfen giriş yapın.', 'error');
         return;
     }
     
@@ -235,7 +235,7 @@ const handlePublishPost = async (e) => {
         const result = await saveBlogPost(postData);
         
         if (result.success) {
-            showMessage('Blog post published successfully! Redirecting...', 'success');
+            showMessage('Blog yazısı başarıyla yayınlandı! 🎉 Yönlendiriliyorsunuz...', 'success');
             setTimeout(() => {
                 window.location.href = 'blogs.html';
             }, 2000);
@@ -245,7 +245,7 @@ const handlePublishPost = async (e) => {
         
     } catch (error) {
         console.error('Error publishing post:', error);
-        showMessage('Failed to publish post: ' + error.message, 'error');
+        showMessage('Blog yazısı yayınlanırken hata oluştu: ' + error.message, 'error');
     } finally {
         submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
@@ -301,7 +301,7 @@ const uploadImage = async (file) => {
         
     } catch (error) {
         console.error('Image upload error:', error);
-        throw new Error('Failed to upload image');
+        throw new Error('Resim yüklenirken hata oluştu');
     }
 };
 
@@ -336,6 +336,18 @@ const showMessage = (message, type = 'info') => {
     const messageDiv = document.createElement('div');
     messageDiv.className = type === 'success' ? 'success-message' : 'error-message';
     messageDiv.textContent = message;
+    
+    // Add styling
+    messageDiv.style.cssText = `
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        background-color: ${type === 'success' ? '#d4edda' : '#f8d7da'};
+        color: ${type === 'success' ? '#155724' : '#721c24'};
+        border: 1px solid ${type === 'success' ? '#c3e6cb' : '#f5c6cb'};
+    `;
     
     const card = document.querySelector('.create-blog-card');
     card.insertBefore(messageDiv, card.firstChild);
