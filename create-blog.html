@@ -71,6 +71,24 @@
                         </select>
                     </div>
 
+                    <!-- Blog Excerpt -->
+                    <div class="form-group">
+                        <label for="blogExcerpt" class="form-label">Short Description</label>
+                        <textarea 
+                            id="blogExcerpt" 
+                            name="excerpt" 
+                            class="form-textarea-short" 
+                            placeholder="Write a brief description of your blog post... This will be shown in the blog cards and search results."
+                            required
+                            rows="4"
+                            maxlength="300"
+                        ></textarea>
+                        <div class="character-count">
+                            <span id="excerptCount">0</span>/300
+                        </div>
+                        <div class="form-hint">A compelling summary that will appear on the blogs page and in search results</div>
+                    </div>
+
                     <!-- Content -->
                     <div class="form-group">
                         <label for="blogContent" class="form-label">Content</label>

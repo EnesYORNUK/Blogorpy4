@@ -115,6 +115,7 @@ window.testSupabaseConnection = testSupabaseConnection;
 // DOM Elements
 const createBlogForm = document.getElementById('createBlogForm');
 const titleInput = document.getElementById('blogTitle');
+const excerptTextarea = document.getElementById('blogExcerpt');
 const contentTextarea = document.getElementById('blogContent');
 const imageInput = document.getElementById('blogImage');
 const imageUploadArea = document.getElementById('imageUploadArea');
@@ -123,6 +124,7 @@ const previewImg = document.getElementById('previewImg');
 const removeImageBtn = document.getElementById('removeImage');
 const saveDraftBtn = document.getElementById('saveDraftBtn');
 const titleCount = document.getElementById('titleCount');
+const excerptCount = document.getElementById('excerptCount');
 const contentCount = document.getElementById('contentCount');
 
 // Tag System Elements
@@ -135,6 +137,7 @@ const tagsSuggestions = document.getElementById('tagsSuggestions');
 console.log('🔍 DOM Elements Check:', {
     createBlogForm: !!createBlogForm,
     titleInput: !!titleInput,
+    excerptTextarea: !!excerptTextarea,
     contentTextarea: !!contentTextarea,
     imageInput: !!imageInput,
     imageUploadArea: !!imageUploadArea,
@@ -143,6 +146,7 @@ console.log('🔍 DOM Elements Check:', {
     removeImageBtn: !!removeImageBtn,
     saveDraftBtn: !!saveDraftBtn,
     titleCount: !!titleCount,
+    excerptCount: !!excerptCount,
     contentCount: !!contentCount
 });
 
@@ -272,7 +276,7 @@ const setupEventListeners = () => {
         titleInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                contentTextarea.focus();
+                excerptTextarea.focus();
             }
         });
     }
@@ -286,6 +290,7 @@ const setupEventListeners = () => {
 // Setup Character Counters
 const setupCharacterCounters = () => {
     if (titleInput) titleInput.addEventListener('input', updateTitleCount);
+    if (excerptTextarea) excerptTextarea.addEventListener('input', updateExcerptCount);
     if (contentTextarea) contentTextarea.addEventListener('input', updateContentCount);
 };
 
@@ -302,6 +307,14 @@ const updateTitleCount = () => {
         } else {
             titleCount.style.color = '#8B6F47';
         }
+    }
+};
+
+// Update excerpt character count
+const updateExcerptCount = () => {
+    const count = excerptTextarea.value.length;
+    if (excerptCount) {
+        excerptCount.textContent = count;
     }
 };
 
@@ -741,6 +754,23 @@ const validateBlogForm = () => {
         console.log('✅ Category validation passed');
     }
     
+    console.log('📄 Excerpt value length:', excerptTextarea?.value?.length);
+    if (!excerptTextarea.value.trim()) {
+        console.log('❌ Excerpt validation failed: empty');
+        showFieldError(excerptTextarea, 'Blog açıklaması gereklidir');
+        isValid = false;
+    } else if (excerptTextarea.value.length < 20) {
+        console.log('❌ Excerpt validation failed: too short');
+        showFieldError(excerptTextarea, 'Açıklama en az 20 karakter olmalıdır');
+        isValid = false;
+    } else if (excerptTextarea.value.length > 300) {
+        console.log('❌ Excerpt validation failed: too long');
+        showFieldError(excerptTextarea, 'Açıklama 300 karakterden az olmalıdır');
+        isValid = false;
+    } else {
+        console.log('✅ Excerpt validation passed');
+    }
+    
     console.log('📄 Content value length:', contentTextarea?.value?.length);
     if (!contentTextarea.value.trim()) {
         console.log('❌ Content validation failed: empty');
@@ -894,6 +924,7 @@ const preparePostData = async (isDraft = false) => {
     
     const postData = {
         title: formData.get('title').trim(),
+        excerpt: formData.get('excerpt').trim(),
         content: formData.get('content').trim(),
         category: formData.get('category'),
         tags: tags,

@@ -172,9 +172,10 @@ const loadBlogPosts = async () => {
                 allBlogPosts.push({
                     id: post.id, // Use the real database ID
                     title: post.title,
-                    excerpt: post.content && post.content.length > 150 ? 
+                    excerpt: post.excerpt || 
+                            (post.content && post.content.length > 150 ? 
                             post.content.substring(0, 150) + '...' : 
-                            (post.content || 'İçerik mevcut değil...'),
+                            'İçerik mevcut değil...'),
                     category: post.category,
                     author: post.author_name || 'Bilinmeyen Yazar',
                     date: new Date(post.created_at).toLocaleDateString('tr-TR', { 

@@ -371,6 +371,13 @@ a:hover {
     color: var(--color-text-secondary);
     line-height: 1.6;
     margin-bottom: var(--spacing-md);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: calc(1.6em * 2); /* 2 lines with line-height 1.6 */
+    overflow-wrap: break-word;
 }
 
 .blog-card-meta {

@@ -129,7 +129,8 @@ const populateBlogData = (blog) => {
         // Update meta description
         const metaDescription = document.querySelector('meta[name="description"]');
         if (metaDescription) {
-            const excerpt = blog.content.substring(0, 150) + '...';
+            const excerpt = blog.excerpt || 
+                           (blog.content.substring(0, 150) + '...');
             metaDescription.setAttribute('content', excerpt);
         }
         
@@ -140,6 +141,14 @@ const populateBlogData = (blog) => {
         document.getElementById('blogCategory').textContent = formatCategory(blog.category);
         document.getElementById('blogDate').textContent = formatDate(blog.created_at);
         document.getElementById('blogTitle').textContent = blog.title;
+        
+        // Blog excerpt (if available)
+        if (blog.excerpt && blog.excerpt.trim()) {
+            const excerptContainer = document.getElementById('blogExcerpt');
+            const excerptText = document.getElementById('blogExcerptText');
+            excerptText.textContent = blog.excerpt;
+            excerptContainer.style.display = 'block';
+        }
         
         // Author info
         const authorName = blog.author_name || 'Anonymous';

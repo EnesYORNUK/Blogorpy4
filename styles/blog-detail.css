@@ -122,6 +122,36 @@
     line-height: 1.2;
 }
 
+/* Blog Excerpt */
+.blog-excerpt {
+    width: 100%;
+    max-width: 100%;
+    margin: 2rem 0;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f8f6f3 0%, #f2efea 100%);
+    border-left: 4px solid #CD853F;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(107, 68, 35, 0.1);
+    box-sizing: border-box;
+    clear: both;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+.blog-excerpt p {
+    font-size: 1.25rem;
+    line-height: 1.7;
+    color: #6B4423;
+    margin: 0;
+    font-style: italic;
+    font-weight: 500;
+    text-align: left;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    hyphens: auto;
+}
+
 .blog-author-info {
     display: flex;
     align-items: center;
@@ -444,42 +474,52 @@
 /* Responsive Design */
 @media (max-width: 768px) {
     .blog-detail-container {
-        padding: calc(80px + 1rem) 1.5rem 2rem;
-        max-width: 100%;
+        padding: 1rem;
+        margin-top: 60px;
     }
-    
+
     .blog-title {
         font-size: 2rem;
     }
-    
+
     .blog-content-wrapper {
         padding: 2rem;
     }
-    
+
     .blog-content {
         font-size: 1rem;
     }
-    
+
     .blog-meta {
         flex-direction: column;
         gap: 0.5rem;
     }
-    
+
     .author-details {
         text-align: center;
     }
     
-    .share-buttons {
-        justify-content: center;
+    .blog-excerpt {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
     }
     
+    .blog-excerpt p {
+        font-size: 1rem;
+    }
+
+    .share-buttons {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
     .related-posts-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .back-to-top {
-        bottom: 1rem;
         right: 1rem;
+        bottom: 1rem;
     }
 }
 
@@ -517,5 +557,15 @@
     
     .blog-content code {
         font-size: 0.8rem;
+    }
+    
+    .blog-excerpt {
+        margin: 1rem 0;
+        padding: 1rem;
+    }
+    
+    .blog-excerpt p {
+        font-size: 1rem;
+        line-height: 1.5;
     }
 } 
