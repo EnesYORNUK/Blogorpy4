@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Manage your Blogorpy profile">
+    <title>Profile - Blogorpy</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/profile.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="profile-page">
+    <!-- Navigation -->
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">Blogorpy</a>
+            <button class="nav-toggle" aria-label="toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="blogs.html" class="nav-link">Blogs</a>
+                <a href="profile.html" class="nav-link active">Profile</a>
+                <button class="nav-link logout-btn" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Profile Header -->
+    <header class="profile-header">
+        <div class="container">
+            <div class="profile-header-content">
+                <div class="profile-avatar-section">
+                    <div class="profile-avatar" id="profileAvatar">
+                        <img src="" alt="Profile Picture" id="avatarImage" style="display: none;">
+                        <div class="avatar-placeholder" id="avatarPlaceholder">
+                            <span id="avatarInitials">U</span>
+                        </div>
+                        <button class="avatar-upload-btn" id="avatarUploadBtn">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M13.333 13.333l-3.333-3.333-3.333 3.333" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M10 10v9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M17.333 15.667c1.167-.4 2-1.533 2-2.833C19.333 11.267 18.067 10 16.5 10c-.2-2.333-2.067-4.167-4.5-4.167S7.7 7.667 7.5 10C5.933 10 4.667 11.267 4.667 12.833c0 1.3.833 2.433 2 2.833" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+                <div class="profile-info">
+                    <h1 class="profile-name" id="profileName">Loading...</h1>
+                    <p class="profile-email" id="profileEmail">Loading...</p>
+                    <p class="profile-joined">Member since <span id="joinedDate">Loading...</span></p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Profile Content -->
+    <main class="profile-main">
+        <div class="container">
+            <div class="profile-tabs">
+                <button class="tab-btn active" data-tab="personal">Personal Info</button>
+                <button class="tab-btn" data-tab="security">Security</button>
+                <button class="tab-btn" data-tab="preferences">Preferences</button>
+            </div>
+
+            <!-- Personal Info Tab -->
+            <div class="tab-content active" id="personal-tab">
+                <div class="profile-card">
+                    <h2 class="card-title">Personal Information</h2>
+                    <form class="profile-form" id="personalInfoForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <input type="text" id="firstName" name="firstName" class="form-input" placeholder="John">
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <input type="text" id="lastName" name="lastName" class="form-input" placeholder="Doe">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" id="email" name="email" class="form-input" placeholder="john.doe@example.com" readonly>
+                            <small class="form-help">Email cannot be changed. Contact support if needed.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bio" class="form-label">Bio</label>
+                            <textarea id="bio" name="bio" class="form-textarea" rows="4" placeholder="Tell us about yourself..."></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="website" class="form-label">Website</label>
+                                <input type="url" id="website" name="website" class="form-input" placeholder="https://yourwebsite.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="location" class="form-label">Location</label>
+                                <input type="text" id="location" name="location" class="form-input" placeholder="New York, NY">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="form-submit-btn">
+                            <span>Save Changes</span>
+                            <div class="button-loader"></div>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Security Tab -->
+            <div class="tab-content" id="security-tab">
+                <div class="profile-card">
+                    <h2 class="card-title">Change Password</h2>
+                    <form class="profile-form" id="changePasswordForm">
+                        <div class="form-group">
+                            <label for="currentPassword" class="form-label">Current Password</label>
+                            <div class="password-input-wrapper">
+                                <input type="password" id="currentPassword" name="currentPassword" class="form-input" placeholder="Enter current password" required>
+                                <button type="button" class="password-toggle">
+                                    <svg class="eye-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                        <path d="M10 4C4.5 4 1 10 1 10s3.5 6 9 6 9-6 9-6-3.5-6-9-6z" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newPassword" class="form-label">New Password</label>
+                            <div class="password-input-wrapper">
+                                <input type="password" id="newPassword" name="newPassword" class="form-input" placeholder="Enter new password" required>
+                                <button type="button" class="password-toggle">
+                                    <svg class="eye-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                        <path d="M10 4C4.5 4 1 10 1 10s3.5 6 9 6 9-6 9-6-3.5-6-9-6z" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="password-strength">
+                                <div class="password-strength-bar" id="newPasswordStrengthBar"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                            <input type="password" id="confirmNewPassword" name="confirmNewPassword" class="form-input" placeholder="Confirm new password" required>
+                        </div>
+
+                        <button type="submit" class="form-submit-btn">
+                            <span>Update Password</span>
+                            <div class="button-loader"></div>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="profile-card">
+                    <h2 class="card-title">Account Actions</h2>
+                    <div class="account-actions">
+                        <button class="action-btn danger" id="deleteAccountBtn">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M3.333 5h13.334M8.333 9v6M11.667 9v6M4.167 5l.833 10c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2l.833-10M7.5 5V3.333c0-.666.567-1.333 1.333-1.333h2.334c.766 0 1.333.667 1.333 1.333V5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>Delete Account</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preferences Tab -->
+            <div class="tab-content" id="preferences-tab">
+                <div class="profile-card">
+                    <h2 class="card-title">Email Notifications</h2>
+                    <div class="preferences-group">
+                        <div class="preference-item">
+                            <div class="preference-info">
+                                <h3>New Blog Posts</h3>
+                                <p>Get notified when new blog posts are published</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="emailBlogPosts" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="preference-info">
+                                <h3>Comments on Your Posts</h3>
+                                <p>Get notified when someone comments on your posts</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="emailComments" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="preference-item">
+                            <div class="preference-info">
+                                <h3>Weekly Newsletter</h3>
+                                <p>Receive our weekly newsletter with blog highlights</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="emailNewsletter">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-card">
+                    <h2 class="card-title">Privacy Settings</h2>
+                    <div class="preferences-group">
+                        <div class="preference-item">
+                            <div class="preference-info">
+                                <h3>Profile Visibility</h3>
+                                <p>Make your profile visible to other users</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="profileVisibility" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="preference-info">
+                                <h3>Show Email in Profile</h3>
+                                <p>Display your email address on your public profile</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showEmail">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button class="form-submit-btn" id="savePreferencesBtn">
+                        <span>Save Preferences</span>
+                        <div class="button-loader"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="footer-title">Blogorpy</h3>
+                    <p class="footer-text">Minimalist blogging at its finest</p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-subtitle">Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="blogs.html">Blogs</a></li>
+                        <li><a href="profile.html">Profile</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-subtitle">Account</h4>
+                    <ul class="footer-links">
+                        <li><a href="profile.html">Manage Profile</a></li>
+                        <li><a href="#" id="footerLogout">Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Blogorpy. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="scripts/main.js"></script>
+    <script src="scripts/profile.js"></script>
+</body>
+</html> 

@@ -9,6 +9,10 @@ const passwordStrengthBar = document.getElementById('passwordStrengthBar');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Auth.js loaded');
+    console.log('📊 Supabase CDN:', !!window.supabase);
+    console.log('🔧 Supabase Client:', !!window.supabaseClient);
+    
     setupPasswordToggles();
     
     if (loginForm) {
@@ -66,23 +70,72 @@ const setupLoginForm = () => {
         submitBtn.classList.add('loading');
         submitBtn.disabled = true;
         
-        // Simulate API call
+        // Sign in with Supabase
         try {
-            await simulateApiCall(1500);
+            console.log('🔑 Attempting login for:', email);
             
-            // In a real app, this would authenticate with a backend
-            console.log('Login attempt:', { email, password, remember });
+            // Check if Supabase client is available
+            if (!window.supabaseClient) {
+                throw new Error('Supabase client not initialized. Please refresh the page.');
+            }
             
-            // Show success and redirect
-            showSuccessMessage('Login successful! Redirecting...');
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1000);
+            const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+            
+            console.log('📊 Login response:', { data, error });
+            
+            if (error) {
+                console.error('❌ Login error details:', error);
+                throw error;
+            }
+            
+            // Check if user exists and is confirmed
+            if (data.user) {
+                console.log('✅ User authenticated successfully');
+                
+                // Check email confirmation status
+                if (!data.user.email_confirmed_at) {
+                    console.log('⚠️ Email not confirmed');
+                    showWarningMessage('Your email is not verified. Please check your inbox and click the verification link.', true);
+                    return;
+                }
+                
+                // Show success and redirect
+                showSuccessMessage('Welcome back! Redirecting to homepage...');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } else {
+                throw new Error('Login failed - no user data returned');
+            }
             
         } catch (error) {
+            console.error('❌ Complete login error:', error);
+            
+            let errorMessage = 'Login failed. ';
+            
+            // More detailed error handling
+            if (error.message.includes('Invalid login credentials')) {
+                errorMessage = 'Invalid email or password. Please check your credentials.';
+            } else if (error.message.includes('Email not confirmed')) {
+                errorMessage = 'Please verify your email address first. Check your inbox for the verification link.';
+            } else if (error.message.includes('Too many requests')) {
+                errorMessage = 'Too many login attempts. Please wait a few minutes and try again.';
+            } else if (error.message.includes('User not found')) {
+                errorMessage = 'No account found with this email address. Please sign up first.';
+            } else if (error.message.includes('signup is disabled')) {
+                errorMessage = 'Authentication is temporarily disabled. Please try again later.';
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                errorMessage = 'Connection failed. Please check your internet connection.';
+            } else {
+                errorMessage += (error.message || 'Unknown error occurred.');
+            }
+            
             BlogorpyUtils.showError(
                 loginForm.querySelector('#email'),
-                'Invalid email or password'
+                errorMessage
             );
         } finally {
             submitBtn.classList.remove('loading');
@@ -119,7 +172,7 @@ const setupSignupForm = () => {
         if (!isPasswordStrong(password)) {
             BlogorpyUtils.showError(
                 signupForm.querySelector('#password'),
-                'Please choose a stronger password'
+                'Password must be at least 8 characters with uppercase and number'
             );
             return;
         }
@@ -138,23 +191,79 @@ const setupSignupForm = () => {
         submitBtn.classList.add('loading');
         submitBtn.disabled = true;
         
-        // Simulate API call
+        // Sign up with Supabase
         try {
-            await simulateApiCall(2000);
+            console.log('🚀 Creating account for:', userData.email);
             
-            // In a real app, this would create an account
-            console.log('Signup attempt:', userData);
+            // Check if Supabase client is available
+            if (!window.supabaseClient) {
+                throw new Error('Supabase client not initialized. Please refresh the page.');
+            }
             
-            // Show success and redirect
-            showSuccessMessage('Account created successfully! Redirecting to login...');
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 1500);
+            const { data, error } = await window.supabaseClient.auth.signUp({
+                email: userData.email,
+                password: userData.password,
+                options: {
+                    data: {
+                        first_name: userData.firstName,
+                        last_name: userData.lastName,
+                        display_name: `${userData.firstName} ${userData.lastName}`
+                    }
+                }
+            });
+            
+            console.log('📝 Supabase response:', { data, error });
+            
+            if (error) {
+                console.error('❌ Supabase error:', error);
+                throw error;
+            }
+            
+            // Check registration result
+            if (data.user) {
+                if (data.user.email_confirmed_at) {
+                    // User is already confirmed (rare case)
+                    showSuccessMessage('Account created and verified! Redirecting to login...');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2500);
+                } else {
+                    // User needs email confirmation (normal case)
+                    showSuccessMessage(`Account created successfully! Please check ${userData.email} for verification link.`);
+                }
+                
+                // Clear form after successful signup
+                signupForm.reset();
+                updatePasswordStrength('');
+                updatePasswordRequirements('');
+                
+                console.log('✅ Account creation completed');
+            } else {
+                throw new Error('Account creation failed - unknown error');
+            }
             
         } catch (error) {
+            console.error('❌ Account creation error:', error);
+            
+            let errorMessage = 'Account creation failed. ';
+            
+            if (error.message.includes('User already registered')) {
+                errorMessage = 'This email is already registered. Try logging in instead.';
+            } else if (error.message.includes('Password should be at least')) {
+                errorMessage = 'Password must be at least 6 characters.';
+            } else if (error.message.includes('Unable to validate email address')) {
+                errorMessage = 'Please enter a valid email address.';
+            } else if (error.message.includes('signup is disabled')) {
+                errorMessage = 'Account registration is currently disabled.';
+            } else if (error.message.includes('network')) {
+                errorMessage = 'Please check your internet connection and try again.';
+            } else {
+                errorMessage += (error.message || 'Unknown error occurred.');
+            }
+            
             BlogorpyUtils.showError(
                 signupForm.querySelector('#email'),
-                'This email is already registered'
+                errorMessage
             );
         } finally {
             submitBtn.classList.remove('loading');
@@ -276,31 +385,101 @@ const showSuccessMessage = (message) => {
     authCard.insertBefore(successDiv, authCard.firstChild);
 };
 
-// Simulate API call
-const simulateApiCall = (delay) => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            // Simulate random success/failure
-            if (Math.random() > 0.3) {
-                resolve();
-            } else {
-                reject(new Error('API Error'));
-            }
-        }, delay);
-    });
+// Show warning message
+const showWarningMessage = (message, showResendButton = false) => {
+    const warningDiv = document.createElement('div');
+    warningDiv.className = 'warning-message';
+    
+    if (showResendButton) {
+        warningDiv.innerHTML = `
+            ${message}
+            <br><br>
+            <button class="resend-verification-btn" onclick="resendVerificationEmail()">
+                Resend Verification Email
+            </button>
+        `;
+    } else {
+        warningDiv.textContent = message;
+    }
+    
+    const authCard = document.querySelector('.auth-card');
+    authCard.insertBefore(warningDiv, authCard.firstChild);
+};
+
+// Resend verification email
+const resendVerificationEmail = async () => {
+    const emailInput = document.querySelector('#email');
+    const email = emailInput.value;
+    
+    if (!email) {
+        alert('Please enter your email address first.');
+        return;
+    }
+    
+    try {
+        const { error } = await window.supabaseClient.auth.resend({
+            type: 'signup',
+            email: email
+        });
+        
+        if (error) throw error;
+        
+        alert('Verification email sent! Please check your inbox.');
+    } catch (error) {
+        console.error('Failed to resend verification email:', error);
+        alert('Failed to resend verification email: ' + error.message);
+    }
 };
 
 // Handle social authentication
 document.querySelectorAll('.social-button').forEach(button => {
-    button.addEventListener('click', () => {
-        const provider = button.querySelector('span').textContent;
-        console.log(`Social auth with ${provider}`);
+    button.addEventListener('click', async () => {
+        const provider = button.querySelector('span').textContent.toLowerCase();
         
-        // In a real app, this would initiate OAuth flow
-        // For demo, just show a message
-        alert(`${provider} authentication would be initiated here`);
+        // Show loading state
+        button.disabled = true;
+        button.style.opacity = '0.7';
+        
+        try {
+            const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
+                provider: provider,
+                options: {
+                    redirectTo: window.location.origin + '/index.html'
+                }
+            });
+            
+            if (error) throw error;
+            
+        } catch (error) {
+            console.error(`${provider} auth error:`, error);
+            
+            let errorMessage = `Failed to authenticate with ${provider.charAt(0).toUpperCase() + provider.slice(1)}`;
+            if (error.message) {
+                errorMessage += ': ' + error.message;
+            }
+            
+            alert(errorMessage);
+        } finally {
+            button.disabled = false;
+            button.style.opacity = '1';
+        }
     });
 });
+
+// Debug function to test Supabase
+window.testSupabase = () => {
+    console.log('=== SUPABASE DEBUG ===');
+    console.log('window.supabase:', window.supabase);
+    console.log('window.supabaseClient:', window.supabaseClient);
+    
+    if (window.supabaseClient) {
+        console.log('✅ Supabase client available');
+        console.log('Auth object:', window.supabaseClient.auth);
+    } else {
+        console.log('❌ Supabase client NOT available');
+    }
+    console.log('===================');
+};
 
 // Auto-focus first input
 window.addEventListener('load', () => {
@@ -308,4 +487,9 @@ window.addEventListener('load', () => {
     if (firstInput) {
         firstInput.focus();
     }
+    
+    // Test Supabase after page load
+    setTimeout(() => {
+        window.testSupabase();
+    }, 500);
 }); 
