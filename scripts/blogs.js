@@ -1,12 +1,12 @@
 // Blogs page JavaScript
 
-// Extended blog posts data
+// Extended blog posts data (fallback mock data)
 const allBlogPosts = [
     {
         id: 1,
         title: "The Art of Minimalist Design",
         excerpt: "Exploring the principles of minimalism in modern web design and how less can truly be more when creating user experiences.",
-        category: "design",
+        category: "technology",
         author: "Sarah Chen",
         date: "2024-01-15",
         readTime: "5 min read",
@@ -36,7 +36,7 @@ const allBlogPosts = [
         id: 4,
         title: "Typography in Digital Design",
         excerpt: "A deep dive into choosing the right typefaces and creating harmonious typography systems for digital products.",
-        category: "design",
+        category: "technology",
         author: "James Wilson",
         date: "2024-01-08",
         readTime: "7 min read",
@@ -44,16 +44,6 @@ const allBlogPosts = [
     },
     {
         id: 5,
-        title: "JavaScript Performance Optimization",
-        excerpt: "Advanced techniques for optimizing JavaScript performance in modern web applications.",
-        category: "technology",
-        author: "Lisa Zhang",
-        date: "2024-01-05",
-        readTime: "10 min read",
-        image: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&h=600&fit=crop"
-    },
-    {
-        id: 6,
         title: "Mindful Living in a Digital Age",
         excerpt: "Finding balance between technology and well-being in our increasingly connected world.",
         category: "lifestyle",
@@ -63,17 +53,7 @@ const allBlogPosts = [
         image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop"
     },
     {
-        id: 7,
-        title: "Color Theory for Web Designers",
-        excerpt: "Understanding color psychology and creating effective color palettes for web projects.",
-        category: "design",
-        author: "Michael Brown",
-        date: "2023-12-28",
-        readTime: "6 min read",
-        image: "https://images.unsplash.com/photo-1502691876148-a84978e59af8?w=800&h=600&fit=crop"
-    },
-    {
-        id: 8,
+        id: 6,
         title: "Startup Growth Strategies",
         excerpt: "Proven strategies for scaling your startup from idea to successful business.",
         category: "business",
@@ -81,16 +61,6 @@ const allBlogPosts = [
         date: "2023-12-25",
         readTime: "9 min read",
         image: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&h=600&fit=crop"
-    },
-    {
-        id: 9,
-        title: "The Rise of AI in Web Development",
-        excerpt: "How artificial intelligence is transforming the way we build and interact with websites.",
-        category: "technology",
-        author: "Rachel Green",
-        date: "2023-12-22",
-        readTime: "8 min read",
-        image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=600&fit=crop"
     }
 ];
 

@@ -254,16 +254,16 @@ const populateRelatedPosts = (posts) => {
 // Utility functions
 const formatCategory = (category) => {
     const categoryMap = {
-        'technology': 'Teknoloji',
-        'lifestyle': 'Yaşam Tarzı',
-        'travel': 'Seyahat',
-        'food': 'Yemek',
-        'health': 'Sağlık',
-        'education': 'Eğitim',
-        'business': 'İş',
-        'entertainment': 'Eğlence',
-        'sports': 'Spor',
-        'other': 'Diğer'
+        'technology': 'Technology',
+        'lifestyle': 'Lifestyle',
+        'travel': 'Travel',
+        'food': 'Food',
+        'health': 'Health',
+        'education': 'Education',
+        'business': 'Business',
+        'entertainment': 'Entertainment',
+        'sports': 'Sports',
+        'other': 'Other'
     };
     
     return categoryMap[category] || category;
