@@ -75,19 +75,19 @@ class ToastManager {
         }, 300);
     }
 
-    success(message, title = 'Başarılı!') {
+    success(message, title = 'Success!') {
         return this.show(message, 'success', title);
     }
 
-    error(message, title = 'Hata!') {
+    error(message, title = 'Error!') {
         return this.show(message, 'error', title);
     }
 
-    warning(message, title = 'Uyarı!') {
+    warning(message, title = 'Warning!') {
         return this.show(message, 'warning', title);
     }
 
-    info(message, title = 'Bilgi') {
+    info(message, title = 'Info') {
         return this.show(message, 'info', title);
     }
 

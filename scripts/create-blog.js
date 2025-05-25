@@ -9,9 +9,9 @@ const testSupabaseConnection = async () => {
         if (!window.supabaseClient) {
             console.error('❌ Supabase client not found');
             if (window.toast) {
-                window.toast.error('Supabase bağlantısı bulunamadı!');
+                window.toast.error('Supabase connection not found!');
             } else {
-                alert('Supabase bağlantısı bulunamadı!');
+                alert('Supabase connection not found!');
             }
             return;
         }
@@ -22,9 +22,9 @@ const testSupabaseConnection = async () => {
         if (authError) {
             console.error('❌ Auth error:', authError);
             if (window.toast) {
-                window.toast.error('Kimlik doğrulama hatası: ' + authError.message);
+                window.toast.error('Authentication error: ' + authError.message);
             } else {
-                alert('Kimlik doğrulama hatası: ' + authError.message);
+                alert('Authentication error: ' + authError.message);
             }
             return;
         }
@@ -32,9 +32,9 @@ const testSupabaseConnection = async () => {
         if (!user) {
             console.error('❌ No authenticated user');
             if (window.toast) {
-                window.toast.error('Kullanıcı giriş yapmamış!');
+                window.toast.error('User not logged in!');
             } else {
-                alert('Kullanıcı giriş yapmamış!');
+                alert('User not logged in!');
             }
             return;
         }
@@ -48,7 +48,7 @@ const testSupabaseConnection = async () => {
         // Test 3: Try to insert a test post
         const testPost = {
             title: 'Test Post - ' + new Date().toISOString(),
-            content: 'Bu bir test blog yazısıdır. Supabase bağlantısını test etmek için oluşturulmuştur. Test test test test test test test test test test test test test.',
+            content: 'This is a test blog post. It was created to test the Supabase connection. Test test test test test test test test test test test test test.',
             category: 'technology',
             tags: ['test'],
             image_url: null,
@@ -67,18 +67,18 @@ const testSupabaseConnection = async () => {
         if (error) {
             console.error('❌ Insert error:', error);
             if (window.toast) {
-                window.toast.error('Test post ekleme hatası: ' + error.message);
+                window.toast.error('Test post insertion error: ' + error.message);
             } else {
-                alert('Test post ekleme hatası: ' + error.message);
+                alert('Test post insertion error: ' + error.message);
             }
             return;
         }
         
         console.log('✅ Test post inserted successfully:', data);
         if (window.toast) {
-            window.toast.success('Test başarılı! Post oluşturuldu: ' + testPost.title);
+            window.toast.success('Test successful! Post created: ' + testPost.title);
         } else {
-            alert('Test başarılı! Post oluşturuldu: ' + testPost.title);
+            alert('Test successful! Post created: ' + testPost.title);
         }
         
         // Test 4: Test storage access
@@ -90,21 +90,21 @@ const testSupabaseConnection = async () => {
         if (storageError) {
             console.error('❌ Storage test error:', storageError);
             if (window.toast) {
-                window.toast.warning('Storage erişim sorunu: ' + storageError.message);
+                window.toast.warning('Storage access issue: ' + storageError.message);
             }
         } else {
             console.log('✅ Storage access successful');
             if (window.toast) {
-                window.toast.success('Storage erişimi de başarılı!');
+                window.toast.success('Storage access also successful!');
             }
         }
         
     } catch (error) {
         console.error('❌ Test failed:', error);
         if (window.toast) {
-            window.toast.error('Test başarısız: ' + error.message);
+            window.toast.error('Test failed: ' + error.message);
         } else {
-            alert('Test başarısız: ' + error.message);
+            alert('Test failed: ' + error.message);
         }
     }
 };
@@ -189,10 +189,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (window.toast) {
             console.log('✅ Toast system available');
-            window.toast.info('Sayfa yüklendi, sistem hazır!', 'Test');
+            window.toast.info('Page loaded, system ready!', 'Test');
         } else {
             console.error('❌ Toast system not available');
-            alert('Toast sistem yüklenemedi!');
+            alert('Toast system could not be loaded!');
         }
     }, 500);
     
@@ -215,7 +215,7 @@ const checkAuthentication = async () => {
         if (error) throw error;
         
         if (!user) {
-            showMessage('Blog yazısı oluşturmak için önce hesabınıza giriş yapmanız gerekiyor.', 'warning', 'Giriş Gerekli');
+            showMessage('You need to log in to your account first to create a blog post.', 'warning', 'Login Required');
             setTimeout(() => {
                 window.location.href = 'login.html';
             }, 3000);
@@ -225,13 +225,13 @@ const checkAuthentication = async () => {
         currentUser = user;
         console.log('✅ User authenticated:', user.email);
         if (!window.authCheckCompleted) {
-            showMessage(`Hoş geldiniz! Blog yazısı oluşturmaya hazırsınız.`, 'success', 'Hazırsınız!');
+            showMessage(`Welcome! You're ready to create a blog post.`, 'success', 'Ready!');
             window.authCheckCompleted = true;
         }
         
     } catch (error) {
         console.error('Authentication error:', error);
-        showMessage('Kimlik doğrulama sırasında bir sorun oluştu. Lütfen tekrar giriş yapmayı deneyin.', 'error', 'Kimlik Doğrulama Hatası');
+        showMessage('A problem occurred during authentication. Please try logging in again.', 'error', 'Authentication Error');
         setTimeout(() => {
             window.location.href = 'login.html';
         }, 3000);
@@ -333,12 +333,12 @@ const handleImageUpload = (e) => {
     if (!file) return;
     
     if (!file.type.startsWith('image/')) {
-        showMessage('Lütfen geçerli bir resim dosyası seçin (PNG, JPG, GIF).', 'error', 'Geçersiz Dosya');
+        showMessage('Please select a valid image file (PNG, JPG, GIF).', 'error', 'Invalid File');
         return;
     }
     
     if (file.size > 5 * 1024 * 1024) {
-        showMessage('Resim boyutu 5MB\'dan küçük olmalıdır. Lütfen daha küçük bir resim seçin.', 'error', 'Dosya Çok Büyük');
+        showMessage('Image size must be less than 5MB. Please select a smaller image.', 'error', 'File Too Large');
         return;
     }
     
@@ -696,9 +696,9 @@ const applyCrop = () => {
             reader.readAsDataURL(croppedFile);
             
             showMessage(
-                `Resim başarıyla kırpıldı! Boyut: ${Math.round(croppedWidth)}x${Math.round(croppedHeight)}px`,
+                `Image successfully cropped! Size: ${Math.round(croppedWidth)}x${Math.round(croppedHeight)}px`,
                 'success',
-                'Resim Hazır! ✂️'
+                'Image Ready! ✂️'
             );
             
             closeCropModal();
@@ -734,11 +734,11 @@ const validateBlogForm = () => {
     console.log('📝 Title value:', titleInput?.value);
     if (!titleInput.value.trim()) {
         console.log('❌ Title validation failed: empty');
-        showFieldError(titleInput, 'Başlık gereklidir');
+        showFieldError(titleInput, 'Title is required');
         isValid = false;
     } else if (titleInput.value.length > 100) {
         console.log('❌ Title validation failed: too long');
-        showFieldError(titleInput, 'Başlık 100 karakterden az olmalıdır');
+        showFieldError(titleInput, 'Title must be less than 100 characters');
         isValid = false;
     } else {
         console.log('✅ Title validation passed');
@@ -748,7 +748,7 @@ const validateBlogForm = () => {
     console.log('📂 Category value:', categorySelect?.value);
     if (!categorySelect.value) {
         console.log('❌ Category validation failed: not selected');
-        showFieldError(categorySelect, 'Lütfen bir kategori seçin');
+        showFieldError(categorySelect, 'Please select a category');
         isValid = false;
     } else {
         console.log('✅ Category validation passed');
@@ -757,15 +757,15 @@ const validateBlogForm = () => {
     console.log('📄 Excerpt value length:', excerptTextarea?.value?.length);
     if (!excerptTextarea.value.trim()) {
         console.log('❌ Excerpt validation failed: empty');
-        showFieldError(excerptTextarea, 'Blog açıklaması gereklidir');
+        showFieldError(excerptTextarea, 'Blog description is required');
         isValid = false;
     } else if (excerptTextarea.value.length < 20) {
         console.log('❌ Excerpt validation failed: too short');
-        showFieldError(excerptTextarea, 'Açıklama en az 20 karakter olmalıdır');
+        showFieldError(excerptTextarea, 'Description must be at least 20 characters');
         isValid = false;
     } else if (excerptTextarea.value.length > 300) {
         console.log('❌ Excerpt validation failed: too long');
-        showFieldError(excerptTextarea, 'Açıklama 300 karakterden az olmalıdır');
+        showFieldError(excerptTextarea, 'Description must be less than 300 characters');
         isValid = false;
     } else {
         console.log('✅ Excerpt validation passed');
@@ -774,11 +774,11 @@ const validateBlogForm = () => {
     console.log('📄 Content value length:', contentTextarea?.value?.length);
     if (!contentTextarea.value.trim()) {
         console.log('❌ Content validation failed: empty');
-        showFieldError(contentTextarea, 'İçerik gereklidir');
+        showFieldError(contentTextarea, 'Content is required');
         isValid = false;
     } else if (contentTextarea.value.length < 50) {
         console.log('❌ Content validation failed: too short');
-        showFieldError(contentTextarea, 'İçerik en az 50 karakter olmalıdır');
+        showFieldError(contentTextarea, 'Content must be at least 50 characters');
         isValid = false;
     } else {
         console.log('✅ Content validation passed');
@@ -793,28 +793,28 @@ const handleSaveDraft = async (e) => {
     e.preventDefault();
     
     if (!currentUser) {
-        showMessage('Taslak kaydetmek için lütfen giriş yapın.', 'error', 'Giriş Gerekli');
+        showMessage('Please log in to save draft.', 'error', 'Login Required');
         return;
     }
     
     saveDraftBtn.classList.add('loading');
     saveDraftBtn.disabled = true;
     
-    showMessage('Taslak kaydediliyor...', 'info', 'İşlem Başladı');
+    showMessage('Saving draft...', 'info', 'Process Started');
     
     try {
         const postData = await preparePostData(true);
         const result = await saveBlogPost(postData);
         
         if (result.success) {
-            showMessage('Taslak başarıyla kaydedildi! İstediğiniz zaman geri gelip düzenleyebilirsiniz.', 'success', 'Taslak Kaydedildi');
+            showMessage('Draft saved successfully! You can come back and edit it anytime.', 'success', 'Draft Saved');
         } else {
             throw new Error(result.error);
         }
         
     } catch (error) {
         console.error('Error saving draft:', error);
-        showMessage(`Taslak kaydedilirken bir sorun oluştu: ${error.message}`, 'error', 'Kaydetme Hatası');
+        showMessage(`A problem occurred while saving draft: ${error.message}`, 'error', 'Save Error');
     } finally {
         saveDraftBtn.classList.remove('loading');
         saveDraftBtn.disabled = false;
@@ -835,14 +835,14 @@ const handlePublishPost = async (e) => {
     
     if (!currentUser) {
         console.log('❌ No current user');
-        showMessage('Blog yazısı yayınlamak için lütfen giriş yapın.', 'error', 'Giriş Gerekli');
+        showMessage('Please log in to publish blog post.', 'error', 'Login Required');
         return;
     }
     
     console.log('✅ User authenticated, validating form...');
     if (!validateBlogForm()) {
         console.log('❌ Form validation failed');
-        showMessage('Lütfen tüm gerekli alanları doldurun ve hataları düzeltin.', 'warning', 'Form Eksik');
+        showMessage('Please fill in all required fields and fix errors.', 'warning', 'Form Incomplete');
         return;
     }
     
@@ -858,7 +858,7 @@ const handlePublishPost = async (e) => {
     }
     
     console.log('📢 Showing start message');
-    showMessage('Blog yazısı yayınlanıyor...', 'info', 'Yayınlanıyor');
+    showMessage('Publishing blog post...', 'info', 'Publishing');
     
     try {
         console.log('📦 Preparing post data...');
@@ -871,7 +871,7 @@ const handlePublishPost = async (e) => {
         
         if (result.success) {
             console.log('✅ Post saved successfully');
-            showMessage('Blog yazınız başarıyla yayınlandı! Tüm kullanıcılar artık okuyabilir. Blog sayfasına yönlendiriliyorsunuz...', 'success', 'Yayınlandı!');
+            showMessage('Your blog post has been successfully published! All users can now read it. Redirecting to blogs page...', 'success', 'Published!');
             setTimeout(() => {
                 console.log('🔄 Redirecting to blogs page...');
                 window.location.href = 'blogs.html';
@@ -882,7 +882,7 @@ const handlePublishPost = async (e) => {
         
     } catch (error) {
         console.error('❌ Error publishing post:', error);
-        showMessage(`Blog yazısı yayınlanırken bir sorun oluştu: ${error.message}`, 'error', 'Yayınlama Hatası');
+        showMessage(`A problem occurred while publishing blog post: ${error.message}`, 'error', 'Publishing Error');
     } finally {
         if (submitBtn) {
             console.log('🔄 Removing loading state');
@@ -911,7 +911,7 @@ const preparePostData = async (isDraft = false) => {
             console.error('📸 Image upload failed, continuing without image:', uploadError);
             // Show warning but don't stop the post creation
             if (window.toast) {
-                window.toast.warning('Resim yüklenemedi, blog yazısı resim olmadan devam ediyor: ' + uploadError.message);
+                window.toast.warning('Image could not be uploaded, blog post continues without image: ' + uploadError.message);
             }
             // Continue without image
             imageUrl = null;
@@ -949,12 +949,12 @@ const uploadImage = async (file) => {
 
         // Validate file type again
         if (!file.type.startsWith('image/')) {
-            throw new Error('Geçersiz dosya tipi: ' + file.type);
+            throw new Error('Invalid file type: ' + file.type);
         }
 
         // Validate file size (5MB)
         if (file.size > 5 * 1024 * 1024) {
-            throw new Error('Dosya çok büyük: ' + (file.size / 1024 / 1024).toFixed(2) + 'MB');
+            throw new Error('File too large: ' + (file.size / 1024 / 1024).toFixed(2) + 'MB');
         }
 
         const fileExt = file.name.split('.').pop().toLowerCase();
@@ -969,7 +969,7 @@ const uploadImage = async (file) => {
 
         if (bucketError) {
             console.error('❌ Bucket access error:', bucketError);
-            throw new Error('Storage bucket erişim hatası: ' + bucketError.message);
+            throw new Error('Storage bucket access error: ' + bucketError.message);
         }
 
         console.log('✅ Bucket accessible, uploading file...');
@@ -984,7 +984,7 @@ const uploadImage = async (file) => {
         
         if (error) {
             console.error('❌ Upload error:', error);
-            throw new Error('Resim yükleme hatası: ' + error.message);
+            throw new Error('Image upload error: ' + error.message);
         }
 
         console.log('✅ Upload successful:', data);
@@ -1002,13 +1002,13 @@ const uploadImage = async (file) => {
         
         // Provide more specific error messages
         if (error.message.includes('not allowed to perform this operation')) {
-            throw new Error('Resim yükleme yetkiniz yok. Lütfen giriş yapıp tekrar deneyin.');
+            throw new Error('You do not have permission to upload images. Please log in and try again.');
         } else if (error.message.includes('File size')) {
-            throw new Error('Resim boyutu çok büyük. Maksimum 5MB olmalıdır.');
+            throw new Error('Image size too large. Maximum 5MB allowed.');
         } else if (error.message.includes('not found')) {
-            throw new Error('Resim depolama alanına erişilemiyor. Lütfen daha sonra tekrar deneyin.');
+            throw new Error('Cannot access image storage. Please try again later.');
         } else {
-            throw new Error('Resim yüklenirken hata oluştu: ' + error.message);
+            throw new Error('Error occurred while uploading image: ' + error.message);
         }
     }
 };
@@ -1051,13 +1051,13 @@ const showMessage = (message, type = 'info', title = '') => {
     if (window.toast) {
         switch (type) {
             case 'success':
-                window.toast.success(message, title || 'Başarılı!');
+                window.toast.success(message, title || 'Success!');
                 break;
             case 'error':
-                window.toast.error(message, title || 'Hata!');
+                window.toast.error(message, title || 'Error!');
                 break;
             case 'warning':
-                window.toast.warning(message, title || 'Uyarı!');
+                window.toast.warning(message, title || 'Warning!');
                 break;
             default:
                 window.toast.info(message, title || 'Bilgi');
@@ -1070,7 +1070,7 @@ const showMessage = (message, type = 'info', title = '') => {
 // Show Field Error with Toast
 const showFieldError = (field, message) => {
     field.classList.add('error');
-    showMessage(message, 'error', 'Form Hatası');
+    showMessage(message, 'error', 'Form Error');
     
     const errorDiv = document.createElement('div');
     errorDiv.className = 'field-error';
@@ -1159,14 +1159,14 @@ const handleTagInputChange = (e) => {
     // Limit input length
     if (value.length > MAX_TAG_LENGTH) {
         e.target.value = value.substring(0, MAX_TAG_LENGTH);
-        showTagError('Tag maximum 30 karakter olabilir');
+        showTagError('Tag can be maximum 30 characters');
     }
     
     // Prevent certain characters
     const invalidChars = /[<>\/\\|"'`]/;
     if (invalidChars.test(value)) {
         e.target.value = value.replace(invalidChars, '');
-        showTagError('Geçersiz karakterler kullanılamaz');
+        showTagError('Invalid characters cannot be used');
     }
 };
 
@@ -1178,22 +1178,22 @@ const addTag = (tagText) => {
     if (!tag) return;
     
     if (selectedTags.length >= MAX_TAGS) {
-        showTagError(`Maksimum ${MAX_TAGS} tag ekleyebilirsiniz`);
+        showTagError(`You can add maximum ${MAX_TAGS} tags`);
         return;
     }
     
     if (selectedTags.includes(tag)) {
-        showTagError('Bu tag zaten eklenmiş');
+        showTagError('This tag has already been added');
         return;
     }
     
     if (tag.length > MAX_TAG_LENGTH) {
-        showTagError('Tag çok uzun');
+        showTagError('Tag is too long');
         return;
     }
     
     if (tag.length < 2) {
-        showTagError('Tag en az 2 karakter olmalı');
+        showTagError('Tag must be at least 2 characters');
         return;
     }
     
@@ -1209,7 +1209,7 @@ const addTag = (tagText) => {
     
     // Success feedback
     if (window.toast) {
-        window.toast.success(`"${tag}" tag'i eklendi`, 'Tag Eklendi');
+                    window.toast.success(`"${tag}" tag added`, 'Tag Added');
     }
     
     console.log('🏷️ Tag added:', tag);
@@ -1279,7 +1279,7 @@ const updateTagCount = () => {
     
     if (selectedTags.length >= MAX_TAGS) {
         countElement.classList.add('max-reached');
-        tagInput.placeholder = 'Maximum tag sayısına ulaşıldı';
+        tagInput.placeholder = 'Maximum tag limit reached';
         tagInput.disabled = true;
     } else {
         countElement.classList.remove('max-reached');
@@ -1314,7 +1314,7 @@ const showTagError = (message) => {
     
     // Show toast
     if (window.toast) {
-        window.toast.error(message, 'Tag Hatası');
+        window.toast.error(message, 'Tag Error');
     }
 };
 

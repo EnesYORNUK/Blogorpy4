@@ -178,7 +178,7 @@ const loadBlogPosts = async () => {
                             'Content not available...'),
                     category: post.category,
                     author: post.author_name || 'Unknown Author',
-                    date: new Date(post.created_at).toLocaleDateString('tr-TR', { 
+                    date: new Date(post.created_at).toLocaleDateString('en-US', { 
                         year: 'numeric', 
                         month: 'short', 
                         day: 'numeric' 

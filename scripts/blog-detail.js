@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (!currentBlogId) {
         console.error('❌ No blog ID provided');
-        showBlogError('Blog ID bulunamadı. URL\'de ?id=123 formatında ID bulunmuyor.');
+        showBlogError('Blog ID not found. URL does not contain ID in ?id=123 format.');
         return;
     }
     
@@ -83,19 +83,19 @@ const loadBlogPost = async () => {
                 console.log('📡 Query without status filter:', { dataWithoutStatus, errorWithoutStatus });
                 
                 if (errorWithoutStatus) {
-                    showBlogError(`Blog yazısı bulunamadı. ID: ${currentBlogId} veritabanında mevcut değil.`);
+                    showBlogError(`Blog post not found. ID: ${currentBlogId} does not exist in database.`);
                 } else {
-                    showBlogError(`Blog yazısı taslak durumda veya yayınlanmamış. Status: ${dataWithoutStatus.status}`);
+                    showBlogError(`Blog post is in draft status or unpublished. Status: ${dataWithoutStatus.status}`);
                 }
             } else {
-                showBlogError('Blog yüklenirken bir hata oluştu: ' + error.message);
+                showBlogError('Error loading blog: ' + error.message);
             }
             return;
         }
         
         if (!data) {
             console.error('❌ No blog post found');
-            showBlogError('Blog yazısı bulunamadı');
+            showBlogError('Blog post not found');
             return;
         }
         
@@ -117,7 +117,7 @@ const loadBlogPost = async () => {
         
     } catch (error) {
         console.error('❌ Error loading blog post:', error);
-        showBlogError('Blog yüklenirken beklenmeyen bir hata oluştu: ' + error.message);
+        showBlogError('An unexpected error occurred while loading blog: ' + error.message);
     }
 };
 
@@ -160,7 +160,7 @@ const populateBlogData = (blog) => {
         
         // Calculate read time
         const readTime = calculateReadTime(blog.content);
-        document.getElementById('readTime').textContent = `${readTime} dk okuma`;
+        document.getElementById('readTime').textContent = `${readTime} min read`;
         
         // Featured image
         if (blog.image_url) {
@@ -283,7 +283,7 @@ const formatCategory = (category) => {
 
 const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR', {
+    return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
@@ -324,7 +324,7 @@ const showBlogError = (message) => {
     
     // Also show toast notification if available
     if (window.toast) {
-        window.toast.error(message, 'Blog Hatası');
+        window.toast.error(message, 'Blog Error');
     }
 };
 
@@ -375,17 +375,17 @@ const copyToClipboard = async () => {
         await navigator.clipboard.writeText(url);
         
         if (window.toast) {
-            window.toast.success('Link kopyalandı!', 'Başarılı');
+            window.toast.success('Link copied!', 'Success');
         } else {
-            alert('Link kopyalandı!');
+            alert('Link copied!');
         }
     } catch (error) {
         console.error('Error copying to clipboard:', error);
         
         if (window.toast) {
-            window.toast.error('Link kopyalanamadı', 'Hata');
+            window.toast.error('Could not copy link', 'Error');
         } else {
-            alert('Link kopyalanamadı');
+            alert('Could not copy link');
         }
     }
 };
@@ -443,9 +443,9 @@ const toggleLike = async () => {
         const user = await window.checkAuth();
         if (!user) {
             if (window.toast) {
-                window.toast.error('Beğenmek için giriş yapmalısınız', 'Giriş Gerekli');
+                window.toast.error('You must be logged in to like posts', 'Login Required');
             } else {
-                alert('Beğenmek için giriş yapmalısınız');
+                alert('You must be logged in to like posts');
             }
             return;
         }
@@ -470,7 +470,7 @@ const toggleLike = async () => {
             if (error) {
                 console.error('❌ Error removing like:', error);
                 if (window.toast) {
-                    window.toast.error('Beğeni kaldırılamadı', 'Hata');
+                    window.toast.error('Could not remove like', 'Error');
                 }
             } else {
                 isLiked = false;
@@ -478,7 +478,7 @@ const toggleLike = async () => {
                 updateLikeDisplay();
                 
                 if (window.toast) {
-                    window.toast.success('Beğeni kaldırıldı', 'Başarılı');
+                    window.toast.success('Like removed', 'Success');
                 }
             }
         } else {
@@ -494,7 +494,7 @@ const toggleLike = async () => {
             if (error) {
                 console.error('❌ Error adding like:', error);
                 if (window.toast) {
-                    window.toast.error('Beğeni eklenemedi', 'Hata');
+                    window.toast.error('Could not add like', 'Error');
                 }
             } else {
                 isLiked = true;
@@ -502,7 +502,7 @@ const toggleLike = async () => {
                 updateLikeDisplay();
                 
                 if (window.toast) {
-                    window.toast.success('Yazı beğenildi!', 'Başarılı');
+                    window.toast.success('Post liked!', 'Success');
                 }
             }
         }
@@ -510,7 +510,7 @@ const toggleLike = async () => {
     } catch (error) {
         console.error('❌ Error toggling like:', error);
         if (window.toast) {
-            window.toast.error('Bir hata oluştu', 'Hata');
+            window.toast.error('An error occurred', 'Error');
         }
     } finally {
         const likeBtn = document.getElementById('likeBtn');
@@ -530,9 +530,9 @@ const updateLikeDisplay = () => {
     
     if (isLiked) {
         likeBtn.classList.add('liked');
-        likeText.textContent = 'Beğenildi';
+        likeText.textContent = 'Liked';
     } else {
         likeBtn.classList.remove('liked');
-        likeText.textContent = 'Beğen';
+        likeText.textContent = 'Like';
     }
 }; 

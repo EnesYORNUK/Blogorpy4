@@ -35,15 +35,15 @@
     <!-- Loading State -->
     <div id="loadingState" class="loading-container">
         <div class="loading-spinner"></div>
-        <p>Blog yazısı yükleniyor...</p>
+        <p>Loading blog post...</p>
     </div>
 
     <!-- Error State -->
     <div id="errorState" class="error-container" style="display: none;">
         <div class="error-content">
-            <h2>Blog Bulunamadı</h2>
-            <p>Aradığınız blog yazısı bulunamadı veya silindi.</p>
-            <a href="blogs.html" class="btn btn-primary">Blogları Gör</a>
+            <h2>Blog Not Found</h2>
+            <p>The blog post you're looking for was not found or has been deleted.</p>
+            <a href="blogs.html" class="btn btn-primary">View Blogs</a>
         </div>
     </div>
 
@@ -51,11 +51,11 @@
     <article id="blogContent" class="blog-detail-container" style="display: none;">
         <!-- Breadcrumb -->
         <nav class="breadcrumb">
-            <a href="index.html">Ana Sayfa</a>
+            <a href="index.html">Home</a>
             <span class="breadcrumb-separator">></span>
-            <a href="blogs.html">Bloglar</a>
+            <a href="blogs.html">Blogs</a>
             <span class="breadcrumb-separator">></span>
-            <span id="breadcrumbTitle">Blog Yazısı</span>
+            <span id="breadcrumbTitle">Blog Post</span>
         </nav>
 
         <!-- Blog Header -->
@@ -106,14 +106,14 @@
                         <svg class="heart-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
-                        <span id="likeText">Beğen</span>
+                        <span id="likeText">Like</span>
                         <span id="likeCount" class="like-count">0</span>
                     </button>
                 </div>
 
                 <!-- Share Buttons -->
                 <div class="blog-share">
-                    <h4>Bu yazıyı paylaş:</h4>
+                    <h4>Share this post:</h4>
                     <div class="share-buttons">
                         <button class="share-btn share-twitter" onclick="shareOnTwitter()">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -132,7 +132,7 @@
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                             </svg>
-                            Kopyala
+                            Copy
                         </button>
                     </div>
                 </div>
@@ -141,7 +141,7 @@
 
         <!-- Related Posts -->
         <section class="related-posts" id="relatedPosts">
-            <h3>İlgili Yazılar</h3>
+            <h3>Related Posts</h3>
             <div class="related-posts-grid" id="relatedPostsGrid">
                 <!-- Related posts will be loaded here -->
             </div>
@@ -159,8 +159,8 @@
     <div id="cropModal" class="crop-modal" style="display: none;">
         <div class="crop-modal-content">
             <div class="crop-header">
-                <h3>Resmi Kırp</h3>
-                <p>Resmi istediğiniz şekilde kırpın</p>
+                <h3>Crop Image</h3>
+                <p>Select the area you want to crop</p>
             </div>
             <div class="crop-container">
                 <canvas id="cropCanvas"></canvas>
@@ -178,8 +178,8 @@
                 </div>
             </div>
             <div class="crop-actions">
-                <button type="button" class="btn btn-secondary" id="cropCancel">İptal</button>
-                <button type="button" class="btn btn-primary" id="cropApply">Uygula</button>
+                <button type="button" class="btn btn-secondary" id="cropCancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="cropApply">Apply</button>
             </div>
         </div>
     </div>

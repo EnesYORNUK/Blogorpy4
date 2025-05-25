@@ -528,7 +528,7 @@ const loadLikedPosts = async () => {
         
         if (error) {
             console.error('❌ Error loading liked posts:', error);
-            showMessage('Beğenilen yazılar yüklenirken hata oluştu: ' + error.message, 'error');
+            showMessage('Error loading liked posts: ' + error.message, 'error');
             return;
         }
         
@@ -548,7 +548,7 @@ const loadLikedPosts = async () => {
     } catch (error) {
         console.error('❌ Error loading liked posts:', error);
         document.getElementById('likedPostsLoading').style.display = 'none';
-        showMessage('Beğenilen yazılar yüklenirken beklenmeyen bir hata oluştu', 'error');
+        showMessage('An unexpected error occurred while loading liked posts', 'error');
     }
 };
 
@@ -582,7 +582,7 @@ const populateLikedPosts = (likedPosts) => {
                     <span class="liked-post-date">${postDate}</span>
                 </div>
                 <div class="liked-post-meta" style="margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.7;">
-                    <span>Beğenildi: ${likedDate}</span>
+                    <span>Liked: ${likedDate}</span>
                     <span>${post.author_name}</span>
                 </div>
             </a>
@@ -593,7 +593,7 @@ const populateLikedPosts = (likedPosts) => {
 // Utility functions for liked posts
 const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR', {
+    return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
@@ -602,16 +602,16 @@ const formatDate = (dateString) => {
 
 const formatCategory = (category) => {
     const categoryMap = {
-        'technology': 'Teknoloji',
-        'lifestyle': 'Yaşam',
-        'travel': 'Seyahat',
-        'food': 'Yemek',
-        'health': 'Sağlık',
-        'education': 'Eğitim',
-        'business': 'İş',
-        'entertainment': 'Eğlence',
-        'sports': 'Spor',
-        'other': 'Diğer'
+        'technology': 'Technology',
+        'lifestyle': 'Lifestyle',
+        'travel': 'Travel',
+        'food': 'Food',
+        'health': 'Health',
+        'education': 'Education',
+        'business': 'Business',
+        'entertainment': 'Entertainment',
+        'sports': 'Sports',
+        'other': 'Other'
     };
     
     return categoryMap[category] || category;
