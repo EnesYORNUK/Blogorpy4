@@ -109,6 +109,9 @@ const loadBlogPost = async () => {
         // Populate blog data
         populateBlogData(data);
         
+        // Load like status and count
+        await loadLikeStatus();
+        
         // Load related posts
         loadRelatedPosts(data.category, data.id);
         
@@ -384,5 +387,152 @@ const copyToClipboard = async () => {
         } else {
             alert('Link kopyalanamadı');
         }
+    }
+};
+
+// Like functionality
+let isLiked = false;
+let likeCount = 0;
+
+// Load like status and count
+const loadLikeStatus = async () => {
+    try {
+        if (!currentBlogId) return;
+        
+        // Get total like count for this post
+        const { data: likesData, error: likesError } = await window.supabaseClient
+            .from('user_favorites')
+            .select('*')
+            .eq('post_id', currentBlogId)
+            .eq('type', 'like');
+            
+        if (likesError) {
+            console.error('❌ Error loading likes:', likesError);
+        } else {
+            likeCount = likesData ? likesData.length : 0;
+            updateLikeDisplay();
+        }
+        
+        // Check if current user has liked this post
+        const user = await window.checkAuth();
+        if (user) {
+            const { data: userLike, error: userLikeError } = await window.supabaseClient
+                .from('user_favorites')
+                .select('*')
+                .eq('post_id', currentBlogId)
+                .eq('user_id', user.id)
+                .eq('type', 'like')
+                .single();
+                
+            if (userLikeError && userLikeError.code !== 'PGRST116') {
+                console.error('❌ Error checking user like:', userLikeError);
+            } else {
+                isLiked = !!userLike;
+                updateLikeDisplay();
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading like status:', error);
+    }
+};
+
+// Toggle like
+const toggleLike = async () => {
+    try {
+        const user = await window.checkAuth();
+        if (!user) {
+            if (window.toast) {
+                window.toast.error('Beğenmek için giriş yapmalısınız', 'Giriş Gerekli');
+            } else {
+                alert('Beğenmek için giriş yapmalısınız');
+            }
+            return;
+        }
+        
+        if (!currentBlogId) {
+            console.error('❌ No blog ID available');
+            return;
+        }
+        
+        const likeBtn = document.getElementById('likeBtn');
+        likeBtn.disabled = true;
+        
+        if (isLiked) {
+            // Remove like
+            const { error } = await window.supabaseClient
+                .from('user_favorites')
+                .delete()
+                .eq('post_id', currentBlogId)
+                .eq('user_id', user.id)
+                .eq('type', 'like');
+                
+            if (error) {
+                console.error('❌ Error removing like:', error);
+                if (window.toast) {
+                    window.toast.error('Beğeni kaldırılamadı', 'Hata');
+                }
+            } else {
+                isLiked = false;
+                likeCount = Math.max(0, likeCount - 1);
+                updateLikeDisplay();
+                
+                if (window.toast) {
+                    window.toast.success('Beğeni kaldırıldı', 'Başarılı');
+                }
+            }
+        } else {
+            // Add like
+            const { error } = await window.supabaseClient
+                .from('user_favorites')
+                .insert({
+                    post_id: currentBlogId,
+                    user_id: user.id,
+                    type: 'like'
+                });
+                
+            if (error) {
+                console.error('❌ Error adding like:', error);
+                if (window.toast) {
+                    window.toast.error('Beğeni eklenemedi', 'Hata');
+                }
+            } else {
+                isLiked = true;
+                likeCount++;
+                updateLikeDisplay();
+                
+                if (window.toast) {
+                    window.toast.success('Yazı beğenildi!', 'Başarılı');
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error toggling like:', error);
+        if (window.toast) {
+            window.toast.error('Bir hata oluştu', 'Hata');
+        }
+    } finally {
+        const likeBtn = document.getElementById('likeBtn');
+        likeBtn.disabled = false;
+    }
+};
+
+// Update like display
+const updateLikeDisplay = () => {
+    const likeBtn = document.getElementById('likeBtn');
+    const likeText = document.getElementById('likeText');
+    const likeCountEl = document.getElementById('likeCount');
+    
+    if (!likeBtn || !likeText || !likeCountEl) return;
+    
+    likeCountEl.textContent = likeCount;
+    
+    if (isLiked) {
+        likeBtn.classList.add('liked');
+        likeText.textContent = 'Beğenildi';
+    } else {
+        likeBtn.classList.remove('liked');
+        likeText.textContent = 'Beğen';
     }
 }; 

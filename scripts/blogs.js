@@ -141,7 +141,7 @@ const loadBlogPosts = async () => {
         
         // Show loading notification
         if (window.toast) {
-            window.toast.info('Blog yazıları yükleniyor...', 'Yükleniyor');
+            window.toast.info('Loading blog posts...', 'Loading');
         }
         
         const { data: posts, error } = await window.supabaseClient
@@ -157,7 +157,7 @@ const loadBlogPosts = async () => {
             // Fall back to mock data
             console.log('📝 Using mock data as fallback');
             if (window.toast) {
-                window.toast.warning('Veritabanına bağlanılamadı, örnek veriler gösteriliyor.', 'Bağlantı Sorunu');
+                window.toast.warning('Could not connect to database, showing sample data.', 'Connection Issue');
             }
             renderBlogPosts();
             return;
@@ -175,17 +175,17 @@ const loadBlogPosts = async () => {
                     excerpt: post.excerpt || 
                             (post.content && post.content.length > 150 ? 
                             post.content.substring(0, 150) + '...' : 
-                            'İçerik mevcut değil...'),
+                            'Content not available...'),
                     category: post.category,
-                    author: post.author_name || 'Bilinmeyen Yazar',
+                    author: post.author_name || 'Unknown Author',
                     date: new Date(post.created_at).toLocaleDateString('tr-TR', { 
                         year: 'numeric', 
                         month: 'short', 
                         day: 'numeric' 
                     }),
                     readTime: post.content ? 
-                             Math.max(1, Math.ceil(post.content.split(' ').length / 200)) + ' dk okuma' :
-                             '1 dk okuma',
+                             Math.max(1, Math.ceil(post.content.split(' ').length / 200)) + ' min read' :
+                             '1 min read',
                     image: post.image_url || `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=600&fit=crop`
                 });
             });
@@ -194,12 +194,12 @@ const loadBlogPosts = async () => {
             console.log('📋 Processed blog posts:', allBlogPosts.map(p => ({ id: p.id, title: p.title })));
             
             if (window.toast) {
-                window.toast.success(`${posts.length} blog yazısı başarıyla yüklendi!`, 'Yükleme Tamamlandı');
+                window.toast.success(`${posts.length} blog posts loaded successfully!`, 'Loading Complete');
             }
         } else {
             console.log('📝 No published posts found, using mock data');
             if (window.toast) {
-                window.toast.info('Henüz yayınlanmış blog yazısı bulunmuyor, örnek veriler gösteriliyor.', 'Yazı Bulunamadı');
+                window.toast.info('No published blog posts found yet, showing sample data.', 'No Posts Found');
             }
         }
         
@@ -210,7 +210,7 @@ const loadBlogPosts = async () => {
         // Fall back to mock data
         console.log('📝 Using mock data due to error');
         if (window.toast) {
-            window.toast.error('Blog yazıları yüklenirken bir hata oluştu, örnek veriler gösteriliyor.', 'Yükleme Hatası');
+            window.toast.error('Error loading blog posts, showing sample data.', 'Loading Error');
         }
         renderBlogPosts();
     }
@@ -265,7 +265,6 @@ const renderBlogPosts = () => {
 const createBlogCard = (post) => {
     const card = document.createElement('article');
     card.className = 'blog-card';
-    card.style.cursor = 'pointer';
     card.innerHTML = `
         <img 
             class="blog-card-image" 
@@ -281,26 +280,22 @@ const createBlogCard = (post) => {
                 <span>${post.author}</span>
                 <span>${post.readTime}</span>
             </div>
-            <div class="blog-card-action">
-                <span class="read-more-text">Devamını Oku →</span>
+            <div class="blog-card-actions">
+                <button class="blog-card-like-btn" data-post-id="${post.id}" onclick="toggleBlogLike(event, '${post.id}')">
+                    <svg class="heart-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span class="like-count">0</span>
+                </button>
+                <button class="read-more-btn" onclick="navigateToBlog('${post.id}')">
+                    <span>Read More →</span>
+                </button>
             </div>
         </div>
     `;
     
-    // Add click handler to navigate to blog detail page
-    card.addEventListener('click', () => {
-        console.log(`Navigating to blog detail for post ${post.id}`);
-        window.location.href = `blog-detail.html?id=${post.id}`;
-    });
-    
-    // Add hover effects
-    card.addEventListener('mouseenter', () => {
-        card.style.transform = 'translateY(-5px)';
-    });
-    
-    card.addEventListener('mouseleave', () => {
-        card.style.transform = 'translateY(0)';
-    });
+    // Load like status for this post
+    loadBlogCardLikeStatus(post.id);
     
     return card;
 };
@@ -396,4 +391,149 @@ const handleDeepLink = () => {
 
 // Check for deep links on load
 window.addEventListener('load', handleDeepLink);
-window.addEventListener('hashchange', handleDeepLink); 
+window.addEventListener('hashchange', handleDeepLink);
+
+// Navigation function for blog cards
+const navigateToBlog = (postId) => {
+    console.log(`Navigating to blog detail for post ${postId}`);
+    window.location.href = `blog-detail.html?id=${postId}`;
+};
+
+// Load like status for blog card
+const loadBlogCardLikeStatus = async (postId) => {
+    try {
+        if (!window.supabaseClient) return;
+        
+        // Get total like count for this post
+        const { data: likesData, error: likesError } = await window.supabaseClient
+            .from('user_favorites')
+            .select('*')
+            .eq('post_id', postId)
+            .eq('type', 'like');
+            
+        if (!likesError && likesData) {
+            const likeCount = likesData.length;
+            updateBlogCardLikeDisplay(postId, false, likeCount);
+        }
+        
+        // Check if current user has liked this post
+        const user = await window.checkAuth();
+        if (user) {
+            const { data: userLike, error: userLikeError } = await window.supabaseClient
+                .from('user_favorites')
+                .select('*')
+                .eq('post_id', postId)
+                .eq('user_id', user.id)
+                .eq('type', 'like')
+                .single();
+                
+            if (!userLikeError && userLike) {
+                updateBlogCardLikeDisplay(postId, true, null);
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading blog card like status:', error);
+    }
+};
+
+// Toggle like for blog card
+const toggleBlogLike = async (event, postId) => {
+    event.stopPropagation(); // Prevent card click
+    
+    try {
+        const user = await window.checkAuth();
+        if (!user) {
+            if (window.toast) {
+                window.toast.error('You must be logged in to like posts', 'Login Required');
+            } else {
+                alert('You must be logged in to like posts');
+            }
+            return;
+        }
+        
+        const likeBtn = document.querySelector(`[data-post-id="${postId}"]`);
+        if (!likeBtn) return;
+        
+        const isLiked = likeBtn.classList.contains('liked');
+        likeBtn.disabled = true;
+        
+        if (isLiked) {
+            // Remove like
+            const { error } = await window.supabaseClient
+                .from('user_favorites')
+                .delete()
+                .eq('post_id', postId)
+                .eq('user_id', user.id)
+                .eq('type', 'like');
+                
+            if (error) {
+                console.error('❌ Error removing like:', error);
+                if (window.toast) {
+                    window.toast.error('Could not remove like', 'Error');
+                }
+            } else {
+                // Update UI
+                const currentCount = parseInt(likeBtn.querySelector('.like-count').textContent);
+                updateBlogCardLikeDisplay(postId, false, Math.max(0, currentCount - 1));
+                
+                if (window.toast) {
+                    window.toast.success('Like removed', 'Success');
+                }
+            }
+        } else {
+            // Add like
+            const { error } = await window.supabaseClient
+                .from('user_favorites')
+                .insert({
+                    post_id: postId,
+                    user_id: user.id,
+                    type: 'like'
+                });
+                
+            if (error) {
+                console.error('❌ Error adding like:', error);
+                if (window.toast) {
+                    window.toast.error('Could not add like', 'Error');
+                }
+            } else {
+                // Update UI
+                const currentCount = parseInt(likeBtn.querySelector('.like-count').textContent);
+                updateBlogCardLikeDisplay(postId, true, currentCount + 1);
+                
+                if (window.toast) {
+                    window.toast.success('Post liked!', 'Success');
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error toggling blog like:', error);
+        if (window.toast) {
+            window.toast.error('An error occurred', 'Error');
+        }
+    } finally {
+        const likeBtn = document.querySelector(`[data-post-id="${postId}"]`);
+        if (likeBtn) {
+            likeBtn.disabled = false;
+        }
+    }
+};
+
+// Update blog card like display
+const updateBlogCardLikeDisplay = (postId, isLiked, likeCount) => {
+    const likeBtn = document.querySelector(`[data-post-id="${postId}"]`);
+    if (!likeBtn) return;
+    
+    const likeCountEl = likeBtn.querySelector('.like-count');
+    
+    if (likeCount !== null) {
+        likeCountEl.textContent = likeCount;
+    }
+    
+    if (isLiked) {
+        likeBtn.classList.add('liked');
+    } else {
+        likeBtn.classList.remove('liked');
+    }
+}; 

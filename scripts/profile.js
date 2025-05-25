@@ -136,7 +136,7 @@ const setupTabs = () => {
     const tabContents = document.querySelectorAll('.tab-content');
     
     tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const targetTab = btn.getAttribute('data-tab');
             
             // Remove active class from all tabs and content
@@ -146,6 +146,11 @@ const setupTabs = () => {
             // Add active class to clicked tab and corresponding content
             btn.classList.add('active');
             document.getElementById(`${targetTab}-tab`).classList.add('active');
+            
+            // Load liked posts when liked tab is activated
+            if (targetTab === 'liked') {
+                await loadLikedPosts();
+            }
         });
     });
 };
@@ -484,4 +489,130 @@ const showMessage = (message, type = 'info') => {
     
     // Scroll to top to show message
     window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Load liked posts
+const loadLikedPosts = async () => {
+    try {
+        console.log('🔄 Loading liked posts...');
+        
+        // Show loading state
+        document.getElementById('likedPostsLoading').style.display = 'flex';
+        document.getElementById('likedPostsEmpty').style.display = 'none';
+        document.getElementById('likedPostsGrid').innerHTML = '';
+        
+        if (!currentUser) {
+            console.error('❌ No current user');
+            return;
+        }
+        
+        // Get user's liked posts
+        const { data: likedPosts, error } = await window.supabaseClient
+            .from('user_favorites')
+            .select(`
+                post_id,
+                created_at,
+                posts (
+                    id,
+                    title,
+                    content,
+                    category,
+                    author_name,
+                    created_at,
+                    excerpt
+                )
+            `)
+            .eq('user_id', currentUser.id)
+            .eq('type', 'like')
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            console.error('❌ Error loading liked posts:', error);
+            showMessage('Beğenilen yazılar yüklenirken hata oluştu: ' + error.message, 'error');
+            return;
+        }
+        
+        console.log('📋 Liked posts loaded:', likedPosts);
+        
+        // Hide loading state
+        document.getElementById('likedPostsLoading').style.display = 'none';
+        
+        if (!likedPosts || likedPosts.length === 0) {
+            // Show empty state
+            document.getElementById('likedPostsEmpty').style.display = 'flex';
+        } else {
+            // Populate liked posts grid
+            populateLikedPosts(likedPosts);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading liked posts:', error);
+        document.getElementById('likedPostsLoading').style.display = 'none';
+        showMessage('Beğenilen yazılar yüklenirken beklenmeyen bir hata oluştu', 'error');
+    }
+};
+
+// Populate liked posts grid
+const populateLikedPosts = (likedPosts) => {
+    const grid = document.getElementById('likedPostsGrid');
+    
+    grid.innerHTML = likedPosts.map(likedPost => {
+        const post = likedPost.posts;
+        if (!post) return ''; // Skip if post is null (deleted post)
+        
+        // Create excerpt from content or use existing excerpt
+        const excerpt = post.excerpt || 
+                       (post.content.length > 150 ? 
+                        post.content.substring(0, 150) + '...' : 
+                        post.content);
+        
+        // Format dates
+        const likedDate = formatDate(likedPost.created_at);
+        const postDate = formatDate(post.created_at);
+        
+        // Format category
+        const formattedCategory = formatCategory(post.category);
+        
+        return `
+            <a href="blog-detail.html?id=${post.id}" class="liked-post-card">
+                <h4 class="liked-post-title">${post.title}</h4>
+                <p class="liked-post-excerpt">${excerpt}</p>
+                <div class="liked-post-meta">
+                    <span class="liked-post-category">${formattedCategory}</span>
+                    <span class="liked-post-date">${postDate}</span>
+                </div>
+                <div class="liked-post-meta" style="margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.7;">
+                    <span>Beğenildi: ${likedDate}</span>
+                    <span>${post.author_name}</span>
+                </div>
+            </a>
+        `;
+    }).filter(html => html).join(''); // Filter out empty strings
+};
+
+// Utility functions for liked posts
+const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('tr-TR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+};
+
+const formatCategory = (category) => {
+    const categoryMap = {
+        'technology': 'Teknoloji',
+        'lifestyle': 'Yaşam',
+        'travel': 'Seyahat',
+        'food': 'Yemek',
+        'health': 'Sağlık',
+        'education': 'Eğitim',
+        'business': 'İş',
+        'entertainment': 'Eğlence',
+        'sports': 'Spor',
+        'other': 'Diğer'
+    };
+    
+    return categoryMap[category] || category;
 }; 
