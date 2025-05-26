@@ -2,6 +2,8 @@
 
 A sophisticated, minimalist blog website built with vanilla HTML, CSS, and JavaScript, featuring real-time authentication and modern design principles.
 
+Website URL - https://blogorpy.vercel.app/
+
 ## ✨ Features
 
 - **🎨 Minimalist Design** - Clean brown color palette with smooth animations
