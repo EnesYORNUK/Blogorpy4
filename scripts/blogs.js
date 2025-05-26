@@ -81,7 +81,15 @@ const newsletterForm = document.getElementById('newsletterForm');
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
-    loadBlogPosts();
+    
+    // Supabase bağlantısı kontrolü için kısa bir bekleyelim
+    setTimeout(() => {
+        // Hata ayıklama bilgisi
+        console.log('📱 Window supabase:', window.supabase ? 'Loaded' : 'Not loaded');
+        console.log('📱 Window supabaseClient:', window.supabaseClient ? 'Available' : 'Not available');
+        
+        loadBlogPosts();
+    }, 1000);
 });
 
 // Setup event listeners
@@ -131,53 +139,84 @@ const setupEventListeners = () => {
 // Load blog posts from Supabase
 const loadBlogPosts = async () => {
     try {
+        // Supabase client kontrol et
         if (!window.supabaseClient) {
-            console.log('⏳ Waiting for Supabase...');
-            setTimeout(loadBlogPosts, 1000);
+            console.error('❌ Supabase client not initialized');
+            if (window.toast) {
+                window.toast.error('Connection issue, showing sample data.', 'Connection Failed');
+            }
+            renderBlogPosts(); // Örnek verileri göster
             return;
         }
 
         console.log('🔄 Loading blog posts from Supabase...');
+        
+        // Bağlantı kontrolü
+        try {
+            // Test sorgusu
+            const { data: testData, error: testError } = await window.supabaseClient
+                .from('posts')
+                .select('count')
+                .limit(1);
+                
+            if (testError) {
+                console.error('❌ Test query failed:', testError);
+                if (window.toast) {
+                    window.toast.error('Database query failed, showing sample data.', 'Query Error');
+                }
+                renderBlogPosts();
+                return;
+            }
+            
+            console.log('✅ Test query successful:', testData);
+        } catch (testErr) {
+            console.error('❌ Connection test failed:', testErr);
+            if (window.toast) {
+                window.toast.error('Could not reach database server', 'Network error');
+            }
+            renderBlogPosts();
+            return;
+        }
         
         // Show loading notification
         if (window.toast) {
             window.toast.info('Loading blog posts...', 'Loading');
         }
         
+        // Asıl veri sorgusu
         const { data: posts, error } = await window.supabaseClient
             .from('posts')
             .select('*')
             .eq('status', 'published')
             .order('created_at', { ascending: false });
 
-        console.log('📡 Supabase response:', { posts, error });
+        console.log('📡 Supabase response:', { posts: posts?.length, error });
 
         if (error) {
-            console.error('Error loading posts:', error);
-            // Fall back to mock data
-            console.log('📝 Using mock data as fallback');
+            console.error('❌ Error loading posts:', error);
             if (window.toast) {
-                window.toast.warning('Could not connect to database, showing sample data.', 'Connection Issue');
+                window.toast.warning('Database query failed, showing sample data.', 'Query Error');
             }
             renderBlogPosts();
             return;
         }
 
         if (posts && posts.length > 0) {
-            // Replace mock data with real posts
+            // Gerçek verilerle değiştir
             allBlogPosts.splice(0, allBlogPosts.length);
             
             posts.forEach(post => {
                 console.log('📝 Processing post:', { id: post.id, title: post.title });
                 allBlogPosts.push({
-                    id: post.id, // Use the real database ID
+                    id: post.id,
                     title: post.title,
                     excerpt: post.excerpt || 
                             (post.content && post.content.length > 150 ? 
                             post.content.substring(0, 150) + '...' : 
                             'Content not available...'),
                     category: post.category,
-                    author: post.author_name || 'Unknown Author',
+                    author_name: post.author_name,
+                    author: post.author_name, // Uyumluluk için
                     date: new Date(post.created_at).toLocaleDateString('en-US', { 
                         year: 'numeric', 
                         month: 'short', 
@@ -186,12 +225,14 @@ const loadBlogPosts = async () => {
                     readTime: post.content ? 
                              Math.max(1, Math.ceil(post.content.split(' ').length / 200)) + ' min read' :
                              '1 min read',
-                    image: post.image_url || `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=600&fit=crop`
+                    image_url: post.image_url,
+                    image: post.image_url, // Uyumluluk için
+                    content: post.content,
+                    likes_count: post.likes_count || 0
                 });
             });
             
             console.log(`✅ Loaded ${posts.length} blog posts from Supabase`);
-            console.log('📋 Processed blog posts:', allBlogPosts.map(p => ({ id: p.id, title: p.title })));
             
             if (window.toast) {
                 window.toast.success(`${posts.length} blog posts loaded successfully!`, 'Loading Complete');
@@ -206,9 +247,7 @@ const loadBlogPosts = async () => {
         renderBlogPosts();
 
     } catch (error) {
-        console.error('Error loading blog posts:', error);
-        // Fall back to mock data
-        console.log('📝 Using mock data due to error');
+        console.error('❌ Error loading blog posts:', error);
         if (window.toast) {
             window.toast.error('Error loading blog posts, showing sample data.', 'Loading Error');
         }
@@ -263,23 +302,37 @@ const renderBlogPosts = () => {
 
 // Create blog card
 const createBlogCard = (post) => {
+    // Post verilerini kontrol et ve logla
+    console.log('🖼️ Creating card for post:', { 
+        id: post.id, 
+        title: post.title,
+        imageUrl: post.image_url || post.image
+    });
+    
     const card = document.createElement('article');
     card.className = 'blog-card';
+    
+    // Güvenli placeholder resim URL'si
+    const placeholderImage = 'https://via.placeholder.com/300x200?text=No+Image';
+    
+    // image_url veya image alanını kontrol et
+    const imageUrl = post.image_url || post.image || placeholderImage;
+    
     card.innerHTML = `
         <img 
             class="blog-card-image" 
-            src="${post.image_url || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+            src="${imageUrl}" 
             alt="${post.title}"
             loading="lazy"
-            onerror="this.src='https://via.placeholder.com/300x200?text=Error+Loading+Image'"
+            onerror="this.onerror=null; this.src='${placeholderImage}';"
         >
         <div class="blog-card-content">
             <span class="blog-card-category">${post.category}</span>
             <h3 class="blog-card-title">${post.title}</h3>
             <p class="blog-card-excerpt">${post.excerpt || 'No excerpt available'}</p>
             <div class="blog-card-meta">
-                <span>${post.author_name || 'Unknown Author'}</span>
-                <span>${calculateReadTime(post.content)} min read</span>
+                <span>${post.author_name || post.author || 'Unknown Author'}</span>
+                <span>${post.readTime || (post.content ? calculateReadTime(post.content) + ' min read' : '1 min read')}</span>
             </div>
             <div class="blog-card-actions">
                 <button class="blog-card-like-btn ${post.is_liked ? 'liked' : ''}" data-post-id="${post.id}" onclick="toggleBlogLike(event, '${post.id}')">
@@ -396,8 +449,17 @@ window.addEventListener('hashchange', handleDeepLink);
 
 // Navigation function for blog cards
 const navigateToBlog = (postId) => {
-    console.log(`Navigating to blog detail for post ${postId}`);
-    window.location.href = `blog-detail.html?id=${postId}`;
+    try {
+        if (!postId) {
+            console.error('❌ Invalid post ID for navigation');
+            return;
+        }
+        
+        console.log(`🔗 Navigating to blog detail for post ${postId}`);
+        window.location.href = `blog-detail.html?id=${postId}`;
+    } catch (error) {
+        console.error('❌ Error navigating to blog:', error);
+    }
 };
 
 // Load like status for blog card
@@ -507,5 +569,24 @@ const updateBlogCardLikeDisplay = (postId, isLiked, likeCount) => {
         if (likeCountEl) {
             likeCountEl.textContent = likeCount;
         }
+    }
+};
+
+// Calculate reading time for content
+const calculateReadTime = (content) => {
+    try {
+        if (!content) return 1;
+        
+        // İçerik bir string değilse dönüştürmeyi dene
+        const contentText = typeof content === 'string' ? content : String(content);
+        
+        const wordsPerMinute = 200;
+        const wordCount = contentText.split(/\s+/).length;
+        const readTime = Math.ceil(wordCount / wordsPerMinute);
+        
+        return Math.max(1, readTime);
+    } catch (error) {
+        console.error('❌ Error calculating read time:', error);
+        return 1;
     }
 }; 
