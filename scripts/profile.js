@@ -38,7 +38,7 @@ const loadUserProfile = async () => {
     
     try {
         // Update profile header
-        updateProfileHeader();
+        await updateProfileHeader();
         
         // Load user metadata and populate forms
         populatePersonalInfoForm();
@@ -50,7 +50,7 @@ const loadUserProfile = async () => {
 };
 
 // Update profile header
-const updateProfileHeader = () => {
+const updateProfileHeader = async () => {
     const profileName = document.getElementById('profileName');
     const profileEmail = document.getElementById('profileEmail');
     const joinedDate = document.getElementById('joinedDate');
@@ -207,7 +207,7 @@ const handlePersonalInfoSubmit = async (e) => {
         currentUser.user_metadata = { ...currentUser.user_metadata, ...userData };
         
         // Update profile header
-        updateProfileHeader();
+        await updateProfileHeader();
         
         // Show success message
         showMessage('Profile updated successfully!', 'success');
@@ -337,17 +337,21 @@ const handleAccountDeletion = async () => {
 };
 
 // Setup avatar upload
-const setupAvatarUpload = () => {
-    const avatarUploadBtn = document.getElementById('avatarUploadBtn');
+const setupAvatarUpload = async () => {
+    const profileAvatar = document.getElementById('profileAvatar');
     const avatarInput = document.getElementById('avatarInput');
     const avatarImage = document.getElementById('avatarImage');
     const avatarPlaceholder = document.getElementById('avatarPlaceholder');
     
-    avatarUploadBtn.addEventListener('click', () => {
+    // Check for existing avatar
+    await checkExistingAvatar();
+    
+    // Set up click handler on the avatar
+    profileAvatar.addEventListener('click', () => {
         avatarInput.click();
     });
     
-    avatarInput.addEventListener('change', (e) => {
+    avatarInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         
@@ -363,18 +367,95 @@ const setupAvatarUpload = () => {
             return;
         }
         
-        // Preview image
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            avatarImage.src = e.target.result;
-            avatarImage.style.display = 'block';
-            avatarPlaceholder.style.display = 'none';
-        };
-        reader.readAsDataURL(file);
+        // Show loading state
+        profileAvatar.classList.add('loading');
         
-        // In a real app, you would upload the file to storage here
-        showMessage('Avatar updated! (Note: This is a demo - file not actually uploaded)', 'success');
+        try {
+            // Preview image immediately for better UX
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                avatarImage.src = e.target.result;
+                avatarImage.style.display = 'block';
+                avatarPlaceholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+            
+            // Create a unique file path using the user's ID
+            const filePath = `${currentUser.id}/${Date.now()}.${file.name.split('.').pop()}`;
+            
+            // Upload to Supabase Storage
+            const { data, error } = await window.supabaseClient
+                .storage
+                .from('avatars')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: true
+                });
+                
+            if (error) throw error;
+            
+            // Get the public URL
+            const { data: { publicUrl } } = window.supabaseClient
+                .storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+                
+            // Update user profile with avatar URL
+            const { error: updateError } = await window.supabaseClient
+                .from('profiles')
+                .update({ avatar_url: publicUrl })
+                .eq('id', currentUser.id);
+                
+            if (updateError) throw updateError;
+            
+            showMessage('Profile picture updated successfully!', 'success');
+            
+        } catch (error) {
+            console.error('Avatar upload failed:', error);
+            showMessage('Failed to upload avatar: ' + error.message, 'error');
+            
+            // If error, check if it's because the bucket doesn't exist
+            if (error.message && error.message.includes("bucket")) {
+                showMessage('Storage not configured. Please set up the "avatars" bucket in Supabase.', 'error');
+            }
+        } finally {
+            profileAvatar.classList.remove('loading');
+        }
     });
+};
+
+// Check for existing avatar
+const checkExistingAvatar = async () => {
+    const avatarImage = document.getElementById('avatarImage');
+    const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+    
+    try {
+        // Get user profile
+        const { data, error } = await window.supabaseClient
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', currentUser.id)
+            .single();
+            
+        if (error) throw error;
+        
+        // If user has an avatar_url, display it
+        if (data && data.avatar_url) {
+            avatarImage.src = data.avatar_url;
+            avatarImage.onload = () => {
+                avatarImage.style.display = 'block';
+                avatarPlaceholder.style.display = 'none';
+            };
+            
+            // Handle failed image load
+            avatarImage.onerror = () => {
+                avatarImage.style.display = 'none';
+                avatarPlaceholder.style.display = 'flex';
+            };
+        }
+    } catch (error) {
+        console.error('Failed to fetch avatar:', error);
+    }
 };
 
 // Setup password toggles
