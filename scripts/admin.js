@@ -380,27 +380,99 @@ function deletePost(postId) {
         try {
             console.log('Post siliniyor, ID:', postId);
             
-            // 1. Adım: Postu sil (beğeniler otomatik olarak silinecek - tetikleyici sayesinde)
-            console.log('Post siliniyor...');
-            const { data: deleteData, error: deleteError } = await supabase
-                .from('posts')
-                .delete()
-                .eq('id', postId)
-                .select();
-            
-            if (deleteError) {
-                console.error('Post silme hatası:', deleteError);
-                throw deleteError;
+            // 1. Adım: İlişkili beğenileri temizle
+            console.log('İlişkili beğeniler temizleniyor...');
+            try {
+                const { error: favoritesError } = await supabase.rpc(
+                    'admin_delete_by_id',
+                    { 
+                        table_name: 'user_favorites',
+                        id_column: 'post_id',
+                        id_value: postId
+                    }
+                );
+                
+                if (favoritesError) {
+                    console.warn('RPC ile beğenileri silerken uyarı:', favoritesError);
+                    
+                    // Normal sorgu ile silmeyi dene
+                    const { error: directFavError } = await supabase
+                        .from('user_favorites')
+                        .delete()
+                        .eq('post_id', postId);
+                        
+                    if (directFavError) {
+                        console.warn('Beğenileri direkt silerken uyarı:', directFavError);
+                    }
+                }
+            } catch (favError) {
+                console.warn('Beğenileri silerken hata (devam ediliyor):', favError);
             }
             
-            console.log('Silme işlemi yanıtı:', deleteData);
+            // 2. Adım: Post silme işlemi
+            console.log('Post siliniyor...');
+            let deleted = false;
             
-            // 2. Adım: Başarılı ise sayfayı güncelle
-            console.log('Post başarıyla silindi');
-            closeModal('deleteModal');
-            loadPosts();
-            loadDashboardStats();
-            showToast('Post başarıyla silindi.');
+            // 1. Yöntem: final_admin_delete_post RPC fonksiyonu
+            try {
+                console.log('final_admin_delete_post ile silme deneniyor...');
+                const { data: finalDeleteData, error: finalDeleteError } = await supabase.rpc(
+                    'final_admin_delete_post',
+                    { post_id_param: postId }
+                );
+                
+                if (!finalDeleteError && finalDeleteData.success === true) {
+                    deleted = true;
+                } else {
+                    throw new Error(finalDeleteError ? finalDeleteError.message : 'Başarısız silme işlemi');
+                }
+            } catch (finalError) {
+                console.warn(`final_admin_delete_post başarısız (post: ${postId}), alternatif deneniyor:`, finalError);
+                
+                // 2. Yöntem: admin_delete_post_bypass RPC fonksiyonu
+                try {
+                    const { error: deleteError } = await supabase.rpc(
+                        'admin_delete_post_bypass',
+                        { post_id_param: postId }
+                    );
+                    
+                    if (!deleteError) {
+                        deleted = true;
+                    } else {
+                        throw new Error(`RPC silme hatası: ${deleteError.message}`);
+                    }
+                } catch (rpcError) {
+                    console.warn(`RPC ile silme başarısız (post: ${postId}), son çare deneniyor:`, rpcError);
+                    
+                    // 3. Yöntem: Doğrudan silme
+                    try {
+                        console.log('Alternatif silme yöntemi deneniyor...');
+                        const { error: directError } = await supabase
+                            .from('posts')
+                            .delete()
+                            .eq('id', postId);
+                        
+                        if (!directError) {
+                            deleted = true;
+                        } else {
+                            throw new Error(`Doğrudan silme hatası: ${directError.message}`);
+                        }
+                    } catch (directErr) {
+                        throw directErr;
+                    }
+                }
+            }
+            
+            // 3. Adım: Başarılı ise sayfayı güncelle
+            if (deleted) {
+                console.log('Post başarıyla silindi');
+                closeModal('deleteModal');
+                loadPosts();
+                loadDashboardStats();
+                showToast('Post başarıyla silindi.');
+            } else {
+                throw new Error('Post silinemedi: Bilinmeyen bir hata oluştu.');
+            }
             
         } catch (error) {
             console.error('Post silinirken hata:', error);
@@ -425,28 +497,73 @@ async function bulkDeletePosts() {
         // Seçilen her post için silme işlemi yap
         let successCount = 0;
         let errorCount = 0;
+        let errorMessages = [];
         
         for (const postId of selectedPosts) {
             try {
                 console.log(`Post siliniyor: ${postId}...`);
                 
-                // Postu sil (beğeniler otomatik olarak silinecek - tetikleyici sayesinde)
-                const { error: deleteError } = await supabase
-                    .from('posts')
-                    .delete()
-                    .eq('id', postId);
-                
-                if (deleteError) {
-                    console.error(`Post silme hatası (${postId}):`, deleteError);
-                    throw deleteError;
+                // 1. Adım: İlişkili beğenileri temizle
+                try {
+                    await supabase.rpc(
+                        'admin_delete_by_id',
+                        { 
+                            table_name: 'user_favorites',
+                            id_column: 'post_id',
+                            id_value: postId
+                        }
+                    );
+                } catch (favError) {
+                    console.warn(`Beğenileri silerken uyarı (post: ${postId}):`, favError);
+                    // Yine de devam et
                 }
                 
-                console.log(`Post başarıyla silindi (${postId})`);
-                successCount++;
+                // 2. Adım: Post silme işlemi
+                let deleted = false;
+                
+                try {
+                    const { error: deleteError } = await supabase.rpc(
+                        'admin_delete_post_bypass',
+                        { post_id_param: postId }
+                    );
+                    
+                    if (!deleteError) {
+                        deleted = true;
+                    } else {
+                        throw new Error(`RPC silme hatası: ${deleteError.message}`);
+                    }
+                } catch (rpcError) {
+                    console.warn(`RPC ile silme başarısız (post: ${postId}), alternatif yöntem deneniyor:`, rpcError);
+                    
+                    // Son çare: Doğrudan silme
+                    try {
+                        console.log('Alternatif silme yöntemi deneniyor...');
+                        const { error: directError } = await supabase
+                            .from('posts')
+                            .delete()
+                            .eq('id', postId);
+                        
+                        if (!directError) {
+                            deleted = true;
+                        } else {
+                            throw new Error(`Doğrudan silme hatası: ${directError.message}`);
+                        }
+                    } catch (directErr) {
+                        throw directErr;
+                    }
+                }
+                
+                if (deleted) {
+                    console.log(`Post başarıyla silindi (${postId})`);
+                    successCount++;
+                } else {
+                    throw new Error('Bilinmeyen bir hata nedeniyle post silinemedi');
+                }
                 
             } catch (err) {
                 console.error(`Post silme hatası (ID: ${postId}):`, err);
                 errorCount++;
+                errorMessages.push(`Post ID ${postId}: ${err.message}`);
             }
         }
         
@@ -458,14 +575,15 @@ async function bulkDeletePosts() {
         
         // Kullanıcıya bilgi ver
         if (errorCount > 0) {
-            alert(`${successCount} post başarıyla silindi, ${errorCount} post silinirken hata oluştu.`);
+            console.error('Silme hataları:', errorMessages);
+            alert(`${successCount} post başarıyla silindi, ${errorCount} post silinirken hata oluştu.\n\nHata detayları:\n${errorMessages.slice(0, 3).join('\n')}${errorMessages.length > 3 ? '\n...' : ''}`);
         } else {
             showToast(`${successCount} post başarıyla silindi.`);
         }
         
     } catch (error) {
         console.error('Toplu post silme işlemi sırasında hata:', error);
-        alert('Toplu silme işlemi sırasında bir hata oluştu.');
+        alert('Toplu silme işlemi sırasında bir hata oluştu: ' + error.message);
     }
 }
 
