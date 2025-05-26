@@ -391,7 +391,7 @@ const handleDeepLink = () => {
 
 // Check for deep links on load
 window.addEventListener('load', handleDeepLink);
-window.addEventListener('hashchange', handleDeepLink);
+window.addEventListener('hashchange', handleDeepLink); 
 
 // Navigation function for blog cards
 const navigateToBlog = (postId) => {

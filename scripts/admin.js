@@ -44,9 +44,11 @@ function checkAdminAuth() {
 async function loadDashboardStats() {
     try {
         // Kullanıcı sayısı
-        const { count: userCount } = await supabase
-            .from('users')
-            .select('*', { count: 'exact', head: true });
+        const { data: userData, error: userError } = await supabase
+            .from('profiles')
+            .select('id');
+        
+        const userCount = userData ? userData.length : 0;
         
         // Post sayısı
         const { count: postCount } = await supabase
@@ -54,9 +56,11 @@ async function loadDashboardStats() {
             .select('*', { count: 'exact', head: true });
         
         // Beğeni sayısı
-        const { count: likeCount } = await supabase
+        const { data: likeData, error: likeError } = await supabase
             .from('likes')
-            .select('*', { count: 'exact', head: true });
+            .select('id');
+            
+        const likeCount = likeData ? likeData.length : 0;
         
         // Görüntüleme sayısı (posts tablosundaki views toplamı)
         const { data: viewsData } = await supabase
@@ -86,12 +90,20 @@ async function loadUsers() {
     const container = document.getElementById('usersTableContainer');
     
     try {
-        const { data: users, error } = await supabase
-            .from('users')
+        console.log('Kullanıcılar yükleniyor...');
+        
+        // Doğrudan SQL sorgusu çalıştıralım
+        const { data, error } = await supabase
+            .from('profiles')
             .select('*')
             .order('created_at', { ascending: false });
+            
+        console.log('Kullanıcı sorgusu sonucu:', { data, error });
         
         if (error) throw error;
+        
+        // Eğer data null ise boş dizi kullan
+        const users = data || [];
         
         if (!users || users.length === 0) {
             container.innerHTML = `
@@ -174,16 +186,14 @@ async function loadPosts() {
     const container = document.getElementById('postsTableContainer');
     
     try {
+        console.log('Postlar yükleniyor...');
+        
         const { data: posts, error } = await supabase
             .from('posts')
-            .select(`
-                *,
-                users (
-                    name,
-                    email
-                )
-            `)
+            .select('*')
             .order('created_at', { ascending: false });
+            
+        console.log('Post sorgusu sonucu:', { posts, error });
         
         if (error) throw error;
         
@@ -233,7 +243,7 @@ async function loadPosts() {
                                     </div>
                                 </div>
                             </td>
-                            <td>${post.users?.name || 'Bilinmeyen Yazar'}</td>
+                            <td>${post.author_name || 'Bilinmeyen Yazar'}</td>
                             <td>
                                 <span class="status-badge status-published">${getCategoryName(post.category)}</span>
                             </td>
@@ -349,9 +359,181 @@ function updateBulkDeleteButton(type) {
     
     if (selectedItems.length > 0) {
         button.style.display = 'flex';
-        button.textContent = `Seçilenleri Sil (${selectedItems.length})`;
+        button.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 6H5H21" stroke="currentColor" stroke-width="2"/>
+                <path d="M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6M19 6V20C19 21.1046 18.1046 22 17 22H7C5.89543 22 5 21.1046 5 20V6H19Z" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            Seçilenleri Sil (${selectedItems.length})
+        `;
     } else {
         button.style.display = 'none';
+    }
+}
+
+// Post silme
+function deletePost(postId) {
+    currentEditingPost = { id: postId };
+    document.getElementById('deleteModalText').textContent = 'Bu postu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.';
+    
+    document.getElementById('confirmDeleteBtn').onclick = async function() {
+        try {
+            console.log('Post siliniyor, ID:', postId);
+            
+            // 1. Adım: Önce ilişkili beğenileri sil
+            console.log('Beğeniler siliniyor...');
+            const { error: likesError } = await supabase
+                .from('user_favorites')
+                .delete()
+                .eq('post_id', postId);
+            
+            if (likesError) {
+                console.warn('Beğeniler silinirken uyarı:', likesError);
+            }
+            
+            // 2. Adım: Postu sil
+            console.log('Post siliniyor...');
+            const { data: deleteData, error: deleteError } = await supabase
+                .from('posts')
+                .delete()
+                .eq('id', postId)
+                .select();
+            
+            if (deleteError) {
+                console.error('Post silme hatası:', deleteError);
+                throw deleteError;
+            }
+            
+            console.log('Silme işlemi yanıtı:', deleteData);
+            
+            // 3. Adım: Başarılı ise sayfayı güncelle
+            console.log('Post başarıyla silindi');
+            closeModal('deleteModal');
+            loadPosts();
+            loadDashboardStats();
+            showToast('Post başarıyla silindi.');
+            
+        } catch (error) {
+            console.error('Post silinirken hata:', error);
+            alert('Post silinirken hata oluştu: ' + error.message);
+        }
+    };
+    
+    openModal('deleteModal');
+}
+
+// Toplu post silme
+async function bulkDeletePosts() {
+    if (selectedPosts.length === 0) return;
+    
+    if (!confirm(`${selectedPosts.length} postu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+        return;
+    }
+    
+    try {
+        console.log('Toplu post silme işlemi başlıyor, silinecek postlar:', selectedPosts);
+        
+        // Seçilen her post için silme işlemi yap
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const postId of selectedPosts) {
+            try {
+                console.log(`Post siliniyor: ${postId}...`);
+                
+                // 1. Adım: Önce ilişkili beğenileri sil
+                console.log(`Beğeniler siliniyor... (${postId})`);
+                await supabase
+                    .from('user_favorites')
+                    .delete()
+                    .eq('post_id', postId);
+                
+                // 2. Adım: Postu sil
+                console.log(`Post siliniyor... (${postId})`);
+                const { error: deleteError } = await supabase
+                    .from('posts')
+                    .delete()
+                    .eq('id', postId);
+                
+                if (deleteError) {
+                    console.error(`Post silme hatası (${postId}):`, deleteError);
+                    throw deleteError;
+                }
+                
+                console.log(`Post başarıyla silindi (${postId})`);
+                successCount++;
+                
+            } catch (err) {
+                console.error(`Post silme hatası (ID: ${postId}):`, err);
+                errorCount++;
+            }
+        }
+        
+        // Listeyi temizle ve UI'ı güncelle
+        selectedPosts = [];
+        updateBulkDeleteButton('posts');
+        loadPosts();
+        loadDashboardStats();
+        
+        // Kullanıcıya bilgi ver
+        if (errorCount > 0) {
+            alert(`${successCount} post başarıyla silindi, ${errorCount} post silinirken hata oluştu.`);
+        } else {
+            showToast(`${successCount} post başarıyla silindi.`);
+        }
+        
+    } catch (error) {
+        console.error('Toplu post silme işlemi sırasında hata:', error);
+        alert('Toplu silme işlemi sırasında bir hata oluştu.');
+    }
+}
+
+// Toplu kullanıcı silme
+async function bulkDeleteUsers() {
+    if (selectedUsers.length === 0) return;
+    
+    if (!confirm(`${selectedUsers.length} kullanıcıyı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+        return;
+    }
+    
+    try {
+        console.log('Toplu kullanıcı silme işlemi başlıyor, silinecek kullanıcılar:', selectedUsers);
+        
+        // Seçilen her kullanıcı için silme işlemi yap
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const userId of selectedUsers) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .delete()
+                    .eq('id', userId);
+                
+                if (error) throw error;
+                successCount++;
+            } catch (err) {
+                console.error(`Kullanıcı silme hatası (ID: ${userId}):`, err);
+                errorCount++;
+            }
+        }
+        
+        // Listeyi temizle ve UI'ı güncelle
+        selectedUsers = [];
+        updateBulkDeleteButton('users');
+        loadUsers();
+        loadDashboardStats();
+        
+        // Kullanıcıya bilgi ver
+        if (errorCount > 0) {
+            alert(`${successCount} kullanıcı başarıyla silindi, ${errorCount} kullanıcı silinirken hata oluştu.`);
+        } else {
+            showToast(`${successCount} kullanıcı başarıyla silindi.`);
+        }
+        
+    } catch (error) {
+        console.error('Toplu kullanıcı silme işlemi sırasında hata:', error);
+        alert('Toplu silme işlemi sırasında bir hata oluştu.');
     }
 }
 
@@ -359,7 +541,7 @@ function updateBulkDeleteButton(type) {
 async function editUser(userId) {
     try {
         const { data: user, error } = await supabase
-            .from('users')
+            .from('profiles')
             .select('*')
             .eq('id', userId)
             .single();
@@ -389,8 +571,9 @@ function deleteUser(userId) {
     
     document.getElementById('confirmDeleteBtn').onclick = async function() {
         try {
+            // Profil kaydını sil (gerçek kullanıcı silinmez)
             const { error } = await supabase
-                .from('users')
+                .from('profiles')
                 .delete()
                 .eq('id', userId);
             
@@ -403,7 +586,7 @@ function deleteUser(userId) {
             
         } catch (error) {
             console.error('Kullanıcı silinirken hata:', error);
-            alert('Kullanıcı silinirken hata oluştu.');
+            alert('Kullanıcı silinirken hata oluştu: ' + error.message);
         }
     };
     
@@ -437,34 +620,6 @@ async function editPost(postId) {
     }
 }
 
-// Post silme
-function deletePost(postId) {
-    currentEditingPost = { id: postId };
-    document.getElementById('deleteModalText').textContent = 'Bu postu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.';
-    
-    document.getElementById('confirmDeleteBtn').onclick = async function() {
-        try {
-            const { error } = await supabase
-                .from('posts')
-                .delete()
-                .eq('id', postId);
-            
-            if (error) throw error;
-            
-            closeModal('deleteModal');
-            loadPosts();
-            loadDashboardStats();
-            showToast('Post başarıyla silindi.');
-            
-        } catch (error) {
-            console.error('Post silinirken hata:', error);
-            alert('Post silinirken hata oluştu.');
-        }
-    };
-    
-    openModal('deleteModal');
-}
-
 // Post görüntüleme
 function viewPost(postId) {
     window.open(`blog-detail.html?id=${postId}`, '_blank');
@@ -489,12 +644,13 @@ function setupEventListeners() {
         if (!currentEditingUser) return;
         
         try {
+            // Doğrudan profili güncelle
             const { error } = await supabase
-                .from('users')
+                .from('profiles')
                 .update({
                     name: document.getElementById('editUserName').value,
-                    email: document.getElementById('editUserEmail').value,
-                    bio: document.getElementById('editUserBio').value
+                    bio: document.getElementById('editUserBio').value,
+                    updated_at: new Date()
                 })
                 .eq('id', currentEditingUser.id);
             
@@ -506,7 +662,7 @@ function setupEventListeners() {
             
         } catch (error) {
             console.error('Kullanıcı güncellenirken hata:', error);
-            alert('Kullanıcı güncellenirken hata oluştu.');
+            alert('Kullanıcı güncellenirken hata oluştu: ' + error.message);
         }
     });
     
@@ -593,4 +749,11 @@ window.editUser = editUser;
 window.deleteUser = deleteUser;
 window.editPost = editPost;
 window.deletePost = deletePost;
-window.viewPost = viewPost; 
+window.viewPost = viewPost;
+window.toggleUserSelection = toggleUserSelection;
+window.togglePostSelection = togglePostSelection;
+window.toggleSelectAllUsers = toggleSelectAllUsers;
+window.toggleSelectAllPosts = toggleSelectAllPosts;
+window.bulkDeleteUsers = bulkDeleteUsers;
+window.bulkDeletePosts = bulkDeletePosts;
+window.switchTab = switchTab; 
