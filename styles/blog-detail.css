@@ -479,8 +479,10 @@
 
 .related-posts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 2rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .related-post-card {
@@ -491,6 +493,9 @@
     transition: all 0.3s ease;
     text-decoration: none;
     color: inherit;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .related-post-card:hover {
@@ -504,6 +509,9 @@
     font-weight: 600;
     margin-bottom: 0.5rem;
     line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .related-post-excerpt {
@@ -511,11 +519,16 @@
     font-size: 0.9rem;
     line-height: 1.6;
     margin-bottom: 1rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .related-post-meta {
     color: #8B6F47;
     font-size: 0.85rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 /* Back to Top Button */
