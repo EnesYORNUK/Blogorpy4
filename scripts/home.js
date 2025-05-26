@@ -34,12 +34,137 @@ const blogPosts = [
     }
 ];
 
+// Get default category image based on category
+const getCategoryImage = (category) => {
+    const categoryImages = {
+        'technology': 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=600&fit=crop',
+        'lifestyle': 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop',
+        'travel': 'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=800&h=600&fit=crop',
+        'food': 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=800&h=600&fit=crop',
+        'health': 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop',
+        'business': 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop',
+        'education': 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=600&fit=crop',
+        'entertainment': 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=600&fit=crop',
+        'sports': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=600&fit=crop'
+    };
+    
+    return categoryImages[category?.toLowerCase()] || 'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=800&h=600&fit=crop';
+};
+
 // Load featured posts
-const loadFeaturedPosts = () => {
+const loadFeaturedPosts = async () => {
     const featuredGrid = document.getElementById('featuredPosts');
     if (!featuredGrid) return;
     
     // Clear loading state
+    featuredGrid.innerHTML = '';
+    
+    // Show loading skeleton
+    featuredGrid.innerHTML = `
+        <div class="skeleton-card">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-content">
+                <div class="skeleton-category"></div>
+                <div class="skeleton-title"></div>
+                <div class="skeleton-excerpt"></div>
+                <div class="skeleton-meta"></div>
+            </div>
+        </div>
+        <div class="skeleton-card">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-content">
+                <div class="skeleton-category"></div>
+                <div class="skeleton-title"></div>
+                <div class="skeleton-excerpt"></div>
+                <div class="skeleton-meta"></div>
+            </div>
+        </div>
+        <div class="skeleton-card">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-content">
+                <div class="skeleton-category"></div>
+                <div class="skeleton-title"></div>
+                <div class="skeleton-excerpt"></div>
+                <div class="skeleton-meta"></div>
+            </div>
+        </div>
+    `;
+    
+    try {
+        // Check if Supabase client is initialized
+        if (!window.supabaseClient) {
+            console.log('⏳ Waiting for Supabase...');
+            setTimeout(loadFeaturedPosts, 1000);
+            return;
+        }
+        
+        // Fetch most liked posts from Supabase
+        const { data: posts, error } = await window.supabaseClient
+            .from('posts')
+            .select('id, title, excerpt, content, category, author_name, image_url, created_at, likes_count')
+            .eq('status', 'published')
+            .order('likes_count', { ascending: false })
+            .limit(3);
+            
+        if (error) {
+            console.error('❌ Error loading most liked posts:', error);
+            // Fallback to sample data if there's an error
+            loadSampleFeaturedPosts(featuredGrid);
+            return;
+        }
+        
+        // Clear skeleton loading
+        featuredGrid.innerHTML = '';
+        
+        if (posts && posts.length > 0) {
+            // Create and append blog cards for the real data
+            posts.forEach((post, index) => {
+                // Format the post data
+                const formattedPost = {
+                    id: post.id,
+                    title: post.title,
+                    excerpt: post.excerpt || 
+                            (post.content && post.content.length > 150 ? 
+                            post.content.substring(0, 150) + '...' : 
+                            'Content not available...'),
+                    category: post.category,
+                    author: post.author_name,
+                    date: new Date(post.created_at).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    }),
+                    readTime: post.content ? 
+                             Math.max(1, Math.ceil(post.content.split(' ').length / 200)) + ' min read' :
+                             '1 min read',
+                    image: post.image_url || getCategoryImage(post.category),
+                    likes_count: post.likes_count || 0
+                };
+                
+                const blogCard = createBlogCard(formattedPost);
+                blogCard.style.opacity = '0';
+                blogCard.style.transform = 'translateY(20px)';
+                featuredGrid.appendChild(blogCard);
+                
+                // Animate cards in sequence
+                setTimeout(() => {
+                    blogCard.style.transition = 'all 0.6s ease';
+                    blogCard.style.opacity = '1';
+                    blogCard.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        } else {
+            console.log('📝 No published posts found, using sample data');
+            loadSampleFeaturedPosts(featuredGrid);
+        }
+    } catch (error) {
+        console.error('❌ Error loading posts:', error);
+        loadSampleFeaturedPosts(featuredGrid);
+    }
+};
+
+// Fallback to sample data if needed
+const loadSampleFeaturedPosts = (featuredGrid) => {
     featuredGrid.innerHTML = '';
     
     // Create and append blog cards
