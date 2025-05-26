@@ -397,40 +397,36 @@ let likeCount = 0;
 // Load like status and count
 const loadLikeStatus = async () => {
     try {
-        if (!currentBlogId) return;
+        if (!currentBlogData) return;
         
-        // Get total like count for this post
-        const { data: likesData, error: likesError } = await window.supabaseClient
+        // İlk olarak post'un toplam beğeni sayısını göster
+        // Doğrudan post'tan likes_count alanını kullan
+        document.getElementById('likeCount').textContent = currentBlogData.likes_count || 0;
+        
+        // Kullanıcı kimliğini kontrol et
+        const user = await window.checkAuth();
+        if (!user) {
+            updateLikeDisplay(false);
+            return;
+        }
+        
+        // Kullanıcının bu postu beğenip beğenmediğini kontrol et
+        const { data, error } = await window.supabaseClient
             .from('user_favorites')
             .select('*')
             .eq('post_id', currentBlogId)
-            .eq('type', 'like');
-            
-        if (likesError) {
-            console.error('❌ Error loading likes:', likesError);
-        } else {
-            likeCount = likesData ? likesData.length : 0;
-            updateLikeDisplay();
+            .eq('user_id', user.id)
+            .eq('type', 'like')
+            .single();
+        
+        if (error && error.code !== 'PGRST116') {
+            console.error('❌ Error checking like status:', error);
+            return;
         }
         
-        // Check if current user has liked this post
-        const user = await window.checkAuth();
-        if (user) {
-            const { data: userLike, error: userLikeError } = await window.supabaseClient
-                .from('user_favorites')
-                .select('*')
-                .eq('post_id', currentBlogId)
-                .eq('user_id', user.id)
-                .eq('type', 'like')
-                .single();
-                
-            if (userLikeError && userLikeError.code !== 'PGRST116') {
-                console.error('❌ Error checking user like:', userLikeError);
-            } else {
-                isLiked = !!userLike;
-                updateLikeDisplay();
-            }
-        }
+        // Beğeni durumunu güncelle
+        const isLiked = data ? true : false;
+        updateLikeDisplay(isLiked);
         
     } catch (error) {
         console.error('❌ Error loading like status:', error);
@@ -440,49 +436,45 @@ const loadLikeStatus = async () => {
 // Toggle like
 const toggleLike = async () => {
     try {
+        // Kullanıcı kimliğini kontrol et
         const user = await window.checkAuth();
         if (!user) {
-            if (window.toast) {
-                window.toast.error('You must be logged in to like posts', 'Login Required');
-            } else {
-                alert('You must be logged in to like posts');
-            }
-            return;
-        }
-        
-        if (!currentBlogId) {
-            console.error('❌ No blog ID available');
+            showToast('Beğenmek için giriş yapmalısınız', 'warning');
             return;
         }
         
         const likeBtn = document.getElementById('likeBtn');
+        const isLiked = likeBtn.classList.contains('liked');
+        
+        // Buton durumunu değiştir (optimistik UI güncellemesi)
         likeBtn.disabled = true;
+        updateLikeDisplay(!isLiked);
+        
+        // Beğeni sayısını güncelle (optimistik)
+        const likeCount = parseInt(document.getElementById('likeCount').textContent || '0');
+        document.getElementById('likeCount').textContent = isLiked ? likeCount - 1 : likeCount + 1;
         
         if (isLiked) {
-            // Remove like
+            // Beğeniyi kaldır
             const { error } = await window.supabaseClient
                 .from('user_favorites')
                 .delete()
                 .eq('post_id', currentBlogId)
                 .eq('user_id', user.id)
                 .eq('type', 'like');
-                
+            
             if (error) {
                 console.error('❌ Error removing like:', error);
-                if (window.toast) {
-                    window.toast.error('Could not remove like', 'Error');
-                }
+                // Hata durumunda UI'ı geri al
+                updateLikeDisplay(true);
+                document.getElementById('likeCount').textContent = likeCount;
+                showToast('Beğeni kaldırılırken bir hata oluştu', 'error');
             } else {
-                isLiked = false;
-                likeCount = Math.max(0, likeCount - 1);
-                updateLikeDisplay();
-                
-                if (window.toast) {
-                    window.toast.success('Like removed', 'Success');
-                }
+                console.log('✅ Like removed successfully');
+                showToast('Beğeni kaldırıldı', 'info');
             }
         } else {
-            // Add like
+            // Beğeni ekle
             const { error } = await window.supabaseClient
                 .from('user_favorites')
                 .insert({
@@ -490,43 +482,34 @@ const toggleLike = async () => {
                     user_id: user.id,
                     type: 'like'
                 });
-                
+            
             if (error) {
                 console.error('❌ Error adding like:', error);
-                if (window.toast) {
-                    window.toast.error('Could not add like', 'Error');
-                }
+                // Hata durumunda UI'ı geri al
+                updateLikeDisplay(false);
+                document.getElementById('likeCount').textContent = likeCount;
+                showToast('Beğeni eklenirken bir hata oluştu', 'error');
             } else {
-                isLiked = true;
-                likeCount++;
-                updateLikeDisplay();
-                
-                if (window.toast) {
-                    window.toast.success('Post liked!', 'Success');
-                }
+                console.log('✅ Like added successfully');
+                showToast('Beğenildi', 'success');
             }
         }
         
+        // Beğeni butonunu yeniden etkinleştir
+        likeBtn.disabled = false;
+        
     } catch (error) {
         console.error('❌ Error toggling like:', error);
-        if (window.toast) {
-            window.toast.error('An error occurred', 'Error');
-        }
-    } finally {
-        const likeBtn = document.getElementById('likeBtn');
-        likeBtn.disabled = false;
+        showToast('Beğeni işlemi sırasında bir hata oluştu', 'error');
     }
 };
 
 // Update like display
-const updateLikeDisplay = () => {
+const updateLikeDisplay = (isLiked) => {
     const likeBtn = document.getElementById('likeBtn');
     const likeText = document.getElementById('likeText');
-    const likeCountEl = document.getElementById('likeCount');
     
-    if (!likeBtn || !likeText || !likeCountEl) return;
-    
-    likeCountEl.textContent = likeCount;
+    if (!likeBtn || !likeText) return;
     
     if (isLiked) {
         likeBtn.classList.add('liked');

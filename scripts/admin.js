@@ -380,18 +380,7 @@ function deletePost(postId) {
         try {
             console.log('Post siliniyor, ID:', postId);
             
-            // 1. Adım: Önce ilişkili beğenileri sil
-            console.log('Beğeniler siliniyor...');
-            const { error: likesError } = await supabase
-                .from('user_favorites')
-                .delete()
-                .eq('post_id', postId);
-            
-            if (likesError) {
-                console.warn('Beğeniler silinirken uyarı:', likesError);
-            }
-            
-            // 2. Adım: Postu sil
+            // 1. Adım: Postu sil (beğeniler otomatik olarak silinecek - tetikleyici sayesinde)
             console.log('Post siliniyor...');
             const { data: deleteData, error: deleteError } = await supabase
                 .from('posts')
@@ -406,7 +395,7 @@ function deletePost(postId) {
             
             console.log('Silme işlemi yanıtı:', deleteData);
             
-            // 3. Adım: Başarılı ise sayfayı güncelle
+            // 2. Adım: Başarılı ise sayfayı güncelle
             console.log('Post başarıyla silindi');
             closeModal('deleteModal');
             loadPosts();
@@ -441,15 +430,7 @@ async function bulkDeletePosts() {
             try {
                 console.log(`Post siliniyor: ${postId}...`);
                 
-                // 1. Adım: Önce ilişkili beğenileri sil
-                console.log(`Beğeniler siliniyor... (${postId})`);
-                await supabase
-                    .from('user_favorites')
-                    .delete()
-                    .eq('post_id', postId);
-                
-                // 2. Adım: Postu sil
-                console.log(`Post siliniyor... (${postId})`);
+                // Postu sil (beğeniler otomatik olarak silinecek - tetikleyici sayesinde)
                 const { error: deleteError } = await supabase
                     .from('posts')
                     .delete()

@@ -268,24 +268,25 @@ const createBlogCard = (post) => {
     card.innerHTML = `
         <img 
             class="blog-card-image" 
-            src="${post.image}" 
+            src="${post.image_url || 'https://via.placeholder.com/300x200?text=No+Image'}" 
             alt="${post.title}"
             loading="lazy"
+            onerror="this.src='https://via.placeholder.com/300x200?text=Error+Loading+Image'"
         >
         <div class="blog-card-content">
             <span class="blog-card-category">${post.category}</span>
             <h3 class="blog-card-title">${post.title}</h3>
-            <p class="blog-card-excerpt">${post.excerpt}</p>
+            <p class="blog-card-excerpt">${post.excerpt || 'No excerpt available'}</p>
             <div class="blog-card-meta">
-                <span>${post.author}</span>
-                <span>${post.readTime}</span>
+                <span>${post.author_name || 'Unknown Author'}</span>
+                <span>${calculateReadTime(post.content)} min read</span>
             </div>
             <div class="blog-card-actions">
-                <button class="blog-card-like-btn" data-post-id="${post.id}" onclick="toggleBlogLike(event, '${post.id}')">
+                <button class="blog-card-like-btn ${post.is_liked ? 'liked' : ''}" data-post-id="${post.id}" onclick="toggleBlogLike(event, '${post.id}')">
                     <svg class="heart-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
-                    <span class="like-count">0</span>
+                    <span class="like-count">${post.likes_count || 0}</span>
                 </button>
                 <button class="read-more-btn" onclick="navigateToBlog('${post.id}')">
                     <span>Read More →</span>
@@ -294,7 +295,7 @@ const createBlogCard = (post) => {
         </div>
     `;
     
-    // Load like status for this post
+    // Load like status for this post (only check if current user has liked it)
     loadBlogCardLikeStatus(post.id);
     
     return card;
@@ -404,19 +405,7 @@ const loadBlogCardLikeStatus = async (postId) => {
     try {
         if (!window.supabaseClient) return;
         
-        // Get total like count for this post
-        const { data: likesData, error: likesError } = await window.supabaseClient
-            .from('user_favorites')
-            .select('*')
-            .eq('post_id', postId)
-            .eq('type', 'like');
-            
-        if (!likesError && likesData) {
-            const likeCount = likesData.length;
-            updateBlogCardLikeDisplay(postId, false, likeCount);
-        }
-        
-        // Check if current user has liked this post
+        // Sadece kullanıcının beğeni durumunu kontrol et
         const user = await window.checkAuth();
         if (user) {
             const { data: userLike, error: userLikeError } = await window.supabaseClient
@@ -458,6 +447,10 @@ const toggleBlogLike = async (event, postId) => {
         const isLiked = likeBtn.classList.contains('liked');
         likeBtn.disabled = true;
         
+        // Optimistik UI güncellemesi
+        const likeCount = parseInt(likeBtn.querySelector('.like-count').textContent || '0');
+        updateBlogCardLikeDisplay(postId, !isLiked, isLiked ? likeCount - 1 : likeCount + 1);
+        
         if (isLiked) {
             // Remove like
             const { error } = await window.supabaseClient
@@ -466,20 +459,11 @@ const toggleBlogLike = async (event, postId) => {
                 .eq('post_id', postId)
                 .eq('user_id', user.id)
                 .eq('type', 'like');
-                
+            
             if (error) {
                 console.error('❌ Error removing like:', error);
-                if (window.toast) {
-                    window.toast.error('Could not remove like', 'Error');
-                }
-            } else {
-                // Update UI
-                const currentCount = parseInt(likeBtn.querySelector('.like-count').textContent);
-                updateBlogCardLikeDisplay(postId, false, Math.max(0, currentCount - 1));
-                
-                if (window.toast) {
-                    window.toast.success('Like removed', 'Success');
-                }
+                // UI'ı geri al
+                updateBlogCardLikeDisplay(postId, true, likeCount);
             }
         } else {
             // Add like
@@ -490,50 +474,38 @@ const toggleBlogLike = async (event, postId) => {
                     user_id: user.id,
                     type: 'like'
                 });
-                
+            
             if (error) {
                 console.error('❌ Error adding like:', error);
-                if (window.toast) {
-                    window.toast.error('Could not add like', 'Error');
-                }
-            } else {
-                // Update UI
-                const currentCount = parseInt(likeBtn.querySelector('.like-count').textContent);
-                updateBlogCardLikeDisplay(postId, true, currentCount + 1);
-                
-                if (window.toast) {
-                    window.toast.success('Post liked!', 'Success');
-                }
+                // UI'ı geri al
+                updateBlogCardLikeDisplay(postId, false, likeCount);
             }
         }
         
+        likeBtn.disabled = false;
+        
     } catch (error) {
-        console.error('❌ Error toggling blog like:', error);
-        if (window.toast) {
-            window.toast.error('An error occurred', 'Error');
-        }
-    } finally {
-        const likeBtn = document.querySelector(`[data-post-id="${postId}"]`);
-        if (likeBtn) {
-            likeBtn.disabled = false;
-        }
+        console.error('❌ Error toggling like:', error);
     }
 };
 
-// Update blog card like display
+// Update like display for blog card
 const updateBlogCardLikeDisplay = (postId, isLiked, likeCount) => {
     const likeBtn = document.querySelector(`[data-post-id="${postId}"]`);
     if (!likeBtn) return;
     
-    const likeCountEl = likeBtn.querySelector('.like-count');
-    
-    if (likeCount !== null) {
-        likeCountEl.textContent = likeCount;
-    }
-    
+    // Beğeni durumunu güncelle
     if (isLiked) {
         likeBtn.classList.add('liked');
     } else {
         likeBtn.classList.remove('liked');
+    }
+    
+    // Beğeni sayısını güncelle (eğer belirtilmişse)
+    if (likeCount !== null && likeCount !== undefined) {
+        const likeCountEl = likeBtn.querySelector('.like-count');
+        if (likeCountEl) {
+            likeCountEl.textContent = likeCount;
+        }
     }
 }; 
