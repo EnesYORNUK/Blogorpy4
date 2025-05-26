@@ -68,7 +68,7 @@ const allBlogPosts = [
 let currentFilter = 'all';
 let searchQuery = '';
 let displayedPosts = 6;
-const postsPerLoad = 3;
+const postsPerLoad = 6;
 
 // DOM elements
 const blogsGrid = document.getElementById('blogsGrid');
@@ -82,14 +82,13 @@ const newsletterForm = document.getElementById('newsletterForm');
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     
-    // Supabase bağlantısı kontrolü için kısa bir bekleyelim
+    // Hemen iskelet yükleme ekranını göster
+    showSkeletonLoading();
+    
+    // Supabase bağlantısı kontrolü için çok kısa bir süre bekle
     setTimeout(() => {
-        // Hata ayıklama bilgisi
-        console.log('📱 Window supabase:', window.supabase ? 'Loaded' : 'Not loaded');
-        console.log('📱 Window supabaseClient:', window.supabaseClient ? 'Available' : 'Not available');
-        
         loadBlogPosts();
-    }, 1000);
+    }, 100); // 1000ms'den 100ms'ye düşürüldü
 });
 
 // Setup event listeners
@@ -151,42 +150,10 @@ const loadBlogPosts = async () => {
 
         console.log('🔄 Loading blog posts from Supabase...');
         
-        // Bağlantı kontrolü
-        try {
-            // Test sorgusu
-            const { data: testData, error: testError } = await window.supabaseClient
-                .from('posts')
-                .select('count')
-                .limit(1);
-                
-            if (testError) {
-                console.error('❌ Test query failed:', testError);
-                if (window.toast) {
-                    window.toast.error('Database query failed, showing sample data.', 'Query Error');
-                }
-                renderBlogPosts();
-                return;
-            }
-            
-            console.log('✅ Test query successful:', testData);
-        } catch (testErr) {
-            console.error('❌ Connection test failed:', testErr);
-            if (window.toast) {
-                window.toast.error('Could not reach database server', 'Network error');
-            }
-            renderBlogPosts();
-            return;
-        }
-        
-        // Show loading notification
-        if (window.toast) {
-            window.toast.info('Loading blog posts...', 'Loading');
-        }
-        
-        // Asıl veri sorgusu
+        // Asıl veri sorgusu - sadece gerekli alanları seç
         const { data: posts, error } = await window.supabaseClient
             .from('posts')
-            .select('*')
+            .select('id, title, excerpt, content, category, author_name, image_url, created_at, likes_count')
             .eq('status', 'published')
             .order('created_at', { ascending: false });
 
@@ -206,7 +173,9 @@ const loadBlogPosts = async () => {
             allBlogPosts.splice(0, allBlogPosts.length);
             
             posts.forEach(post => {
-                console.log('📝 Processing post:', { id: post.id, title: post.title });
+                // Eğer resim yoksa, kategoriye göre varsayılan resim ata
+                const categoryImage = getCategoryImage(post.category);
+                
                 allBlogPosts.push({
                     id: post.id,
                     title: post.title,
@@ -225,14 +194,12 @@ const loadBlogPosts = async () => {
                     readTime: post.content ? 
                              Math.max(1, Math.ceil(post.content.split(' ').length / 200)) + ' min read' :
                              '1 min read',
-                    image_url: post.image_url,
-                    image: post.image_url, // Uyumluluk için
+                    image_url: post.image_url || categoryImage,
+                    image: post.image_url || categoryImage, // Uyumluluk için
                     content: post.content,
                     likes_count: post.likes_count || 0
                 });
             });
-            
-            console.log(`✅ Loaded ${posts.length} blog posts from Supabase`);
             
             if (window.toast) {
                 window.toast.success(`${posts.length} blog posts loaded successfully!`, 'Loading Complete');
@@ -300,6 +267,25 @@ const renderBlogPosts = () => {
     updateResultsCount(filteredPosts.length);
 };
 
+// Kategoriye göre varsayılan resim URL'si oluştur
+const getCategoryImage = (category) => {
+    const categoryImages = {
+        'technology': 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&h=600&fit=crop',
+        'business': 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=600&fit=crop',
+        'lifestyle': 'https://images.unsplash.com/photo-1483992233021-1801812286a0?w=800&h=600&fit=crop',
+        'health': 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=800&h=600&fit=crop',
+        'food': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=600&fit=crop',
+        'travel': 'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=800&h=600&fit=crop',
+        'education': 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=600&fit=crop',
+        'entertainment': 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=600&fit=crop',
+        'sports': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=600&fit=crop',
+        'other': 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?w=800&h=600&fit=crop'
+    };
+    
+    // Kategori varsa ve tanımlı bir resim varsa onu döndür, yoksa default
+    return categoryImages[category?.toLowerCase()] || 'https://images.unsplash.com/photo-1432821596592-e2c18b78144f?w=800&h=600&fit=crop';
+};
+
 // Create blog card
 const createBlogCard = (post) => {
     // Post verilerini kontrol et ve logla
@@ -315,8 +301,8 @@ const createBlogCard = (post) => {
     // Güvenli placeholder resim URL'si
     const placeholderImage = 'https://via.placeholder.com/300x200?text=No+Image';
     
-    // image_url veya image alanını kontrol et
-    const imageUrl = post.image_url || post.image || placeholderImage;
+    // image_url veya image alanını kontrol et, yoksa kategoriye göre resim seç
+    const imageUrl = post.image_url || post.image || getCategoryImage(post.category) || placeholderImage;
     
     card.innerHTML = `
         <img 
@@ -324,7 +310,7 @@ const createBlogCard = (post) => {
             src="${imageUrl}" 
             alt="${post.title}"
             loading="lazy"
-            onerror="this.onerror=null; this.src='${placeholderImage}';"
+            onerror="this.onerror=null; this.src='${getCategoryImage(post.category)}';"
         >
         <div class="blog-card-content">
             <span class="blog-card-category">${post.category}</span>
@@ -369,12 +355,18 @@ const renderNoResults = () => {
 const loadMorePosts = () => {
     loadMoreBtn.classList.add('loading');
     
-    // Simulate loading delay
+    // Daha kısa bir yükleme süresi kullanılsın
     setTimeout(() => {
         displayedPosts += postsPerLoad;
         renderBlogPosts();
         loadMoreBtn.classList.remove('loading');
-    }, 600);
+        
+        // Yüklenen yeni içeriğe otomatik kaydır
+        const lastLoadedPost = document.querySelector(`.blogs-grid article:nth-child(${displayedPosts - postsPerLoad + 1})`);
+        if (lastLoadedPost) {
+            lastLoadedPost.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 300); // 600ms'den 300ms'ye düşürüldü
 };
 
 // Update results count
@@ -588,5 +580,30 @@ const calculateReadTime = (content) => {
     } catch (error) {
         console.error('❌ Error calculating read time:', error);
         return 1;
+    }
+};
+
+// Skeleton loading efekti göster
+const showSkeletonLoading = () => {
+    blogsGrid.innerHTML = '';
+    
+    // 6 adet iskelet kart oluştur
+    for (let i = 0; i < 6; i++) {
+        const skeletonCard = document.createElement('article');
+        skeletonCard.className = 'blog-card skeleton';
+        skeletonCard.innerHTML = `
+            <div class="skeleton-image"></div>
+            <div class="blog-card-content">
+                <div class="skeleton-category"></div>
+                <div class="skeleton-title"></div>
+                <div class="skeleton-excerpt"></div>
+                <div class="skeleton-meta">
+                    <div class="skeleton-author"></div>
+                    <div class="skeleton-readtime"></div>
+                </div>
+                <div class="skeleton-actions"></div>
+            </div>
+        `;
+        blogsGrid.appendChild(skeletonCard);
     }
 }; 
