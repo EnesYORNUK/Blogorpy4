@@ -92,7 +92,7 @@ async function loadUsers() {
     try {
         console.log('Kullanıcılar yükleniyor...');
         
-        // Doğrudan SQL sorgusu çalıştıralım
+        // Profilleri getir
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
@@ -106,6 +106,27 @@ async function loadUsers() {
         const users = data || [];
         
         if (!users || users.length === 0) {
+            // Profiller boş ise, doğrudan auth kullanıcılarını kontrol et
+            try {
+                console.log('Profiller bulunamadı, auth kullanıcılarını kontrol ediyorum...');
+                
+                // Admin kullanıcıları getiren fonksiyonu çağır
+                const { data: adminResult, error: adminError } = await supabase.rpc('get_admin_users');
+                
+                if (adminError) {
+                    console.warn('Admin kullanıcılar alınamadı:', adminError);
+                    throw new Error('Kullanıcılar yüklenemedi');
+                }
+                
+                if (adminResult && adminResult.length > 0) {
+                    console.log('Auth kullanıcıları bulundu:', adminResult);
+                    renderUserTable(adminResult);
+                    return;
+                }
+            } catch (authError) {
+                console.error('Auth kullanıcıları alınırken hata:', authError);
+            }
+            
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">
@@ -116,58 +137,20 @@ async function loadUsers() {
                     </div>
                     <h3>Henüz kullanıcı yok</h3>
                     <p>Sistemde kayıtlı kullanıcı bulunmuyor.</p>
+                    <button class="refresh-btn" onclick="syncUsers()" style="margin-top: 15px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 4V10H7" stroke="currentColor" stroke-width="2"/>
+                            <path d="M23 20V14H17" stroke="currentColor" stroke-width="2"/>
+                            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Kullanıcıları Senkronize Et
+                    </button>
                 </div>
             `;
             return;
         }
         
-        const tableHTML = `
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>
-                            <input type="checkbox" class="checkbox" id="selectAllUsers" onchange="toggleSelectAllUsers()">
-                        </th>
-                        <th>Kullanıcı</th>
-                        <th>E-posta</th>
-                        <th>Kayıt Tarihi</th>
-                        <th>Durum</th>
-                        <th>İşlemler</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${users.map(user => `
-                        <tr id="user-${user.id}">
-                            <td>
-                                <input type="checkbox" class="checkbox user-checkbox" value="${user.id}" onchange="toggleUserSelection('${user.id}')">
-                            </td>
-                            <td>
-                                <div class="user-info">
-                                    <div class="user-avatar">${user.name ? user.name.charAt(0).toUpperCase() : 'U'}</div>
-                                    <div class="user-details">
-                                        <div class="user-name">${user.name || 'İsimsiz Kullanıcı'}</div>
-                                        <div class="user-email">${user.bio || 'Biyografi yok'}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>${user.email}</td>
-                            <td>${formatDate(user.created_at)}</td>
-                            <td>
-                                <span class="status-badge status-active">Aktif</span>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="action-btn edit-btn" onclick="editUser('${user.id}')">Düzenle</button>
-                                    <button class="action-btn delete-btn" onclick="deleteUser('${user.id}')">Sil</button>
-                                </div>
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-        
-        container.innerHTML = tableHTML;
+        renderUserTable(users);
         
     } catch (error) {
         console.error('Kullanıcılar yüklenirken hata:', error);
@@ -175,9 +158,96 @@ async function loadUsers() {
             <div class="empty-state">
                 <div class="empty-state-icon">⚠️</div>
                 <h3>Hata oluştu</h3>
-                <p>Kullanıcılar yüklenirken bir hata oluştu.</p>
+                <p>Kullanıcılar yüklenirken bir hata oluştu: ${error.message}</p>
+                <button class="refresh-btn" onclick="syncUsers()" style="margin-top: 15px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 4V10H7" stroke="currentColor" stroke-width="2"/>
+                        <path d="M23 20V14H17" stroke="currentColor" stroke-width="2"/>
+                        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Kullanıcıları Senkronize Et
+                </button>
             </div>
         `;
+    }
+}
+
+// Kullanıcı tablosunu render et
+function renderUserTable(users) {
+    const container = document.getElementById('usersTableContainer');
+    
+    const tableHTML = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>
+                        <input type="checkbox" class="checkbox" id="selectAllUsers" onchange="toggleSelectAllUsers()">
+                    </th>
+                    <th>Kullanıcı</th>
+                    <th>E-posta</th>
+                    <th>Kayıt Tarihi</th>
+                    <th>Durum</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${users.map(user => `
+                    <tr id="user-${user.id}">
+                        <td>
+                            <input type="checkbox" class="checkbox user-checkbox" value="${user.id}" onchange="toggleUserSelection('${user.id}')">
+                        </td>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar">${user.name ? user.name.charAt(0).toUpperCase() : 'U'}</div>
+                                <div class="user-details">
+                                    <div class="user-name">${user.name || 'İsimsiz Kullanıcı'}</div>
+                                    <div class="user-email">${user.bio || 'Biyografi yok'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${user.email}</td>
+                        <td>${formatDate(user.created_at)}</td>
+                        <td>
+                            <span class="status-badge status-active">Aktif</span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn edit-btn" onclick="editUser('${user.id}')">Düzenle</button>
+                                <button class="action-btn delete-btn" onclick="deleteUser('${user.id}')">Sil</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+    
+    container.innerHTML = tableHTML;
+}
+
+// Kullanıcıları senkronize et
+async function syncUsers() {
+    try {
+        document.getElementById('usersTableContainer').innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Kullanıcılar senkronize ediliyor...</p>
+            </div>
+        `;
+        
+        // Admin işlemi olarak RPC fonksiyonunu çağır
+        const { data, error } = await supabase.rpc('sync_auth_profiles');
+        
+        if (error) throw error;
+        
+        // Kullanıcıları yeniden yükle
+        loadUsers();
+        showToast('Kullanıcılar başarıyla senkronize edildi.');
+        
+    } catch (error) {
+        console.error('Kullanıcılar senkronize edilirken hata:', error);
+        alert('Kullanıcılar senkronize edilirken hata oluştu: ' + error.message);
+        loadUsers(); // Yine de yeniden yüklemeyi dene
     }
 }
 
@@ -238,12 +308,12 @@ async function loadPosts() {
                                 <div class="post-info">
                                     <div class="post-thumbnail">${post.title ? post.title.charAt(0).toUpperCase() : 'P'}</div>
                                     <div class="post-details">
-                                        <div class="post-title">${post.title}</div>
-                                        <div class="post-excerpt">${post.excerpt || 'Özet yok'}</div>
+                                        <div class="post-title" title="${post.title}">${truncateText(post.title, 40)}</div>
+                                        <div class="post-excerpt" title="${post.excerpt || 'Özet yok'}">${truncateText(post.excerpt || 'Özet yok', 60)}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td>${post.author_name || 'Bilinmeyen Yazar'}</td>
+                            <td>${truncateText(post.author_name || 'Bilinmeyen Yazar', 15)}</td>
                             <td>
                                 <span class="status-badge status-published">${getCategoryName(post.category)}</span>
                             </td>
@@ -841,6 +911,12 @@ function getCategoryName(category) {
 function showToast(message) {
     // Basit toast bildirimi
     alert(message);
+}
+
+// Metin kısaltma fonksiyonu
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
 
 // Global fonksiyonları window objesine ekle
